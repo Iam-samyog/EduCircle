@@ -119,16 +119,22 @@ def extract_text_from_file(file_storage, file_ext):
     """
     try:
         text = ""
+        # Create a seekable BytesIO stream from the uploaded file
+        content = file_storage.read()
+        stream = io.BytesIO(content)
+        
         if file_ext == '.pdf':
-            reader = PdfReader(file_storage)
+            reader = PdfReader(stream)
             for page in reader.pages:
-                text += page.extract_text() + "\n"
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
         elif file_ext in ['.docx', '.doc']:
-            doc = Document(file_storage)
+            doc = Document(stream)
             for paragraph in doc.paragraphs:
                 text += paragraph.text + "\n"
         elif file_ext == '.txt':
-            text = file_storage.read().decode('utf-8', errors='ignore')
+            text = content.decode('utf-8', errors='ignore')
         
         return text.strip()
     except Exception as e:

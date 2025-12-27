@@ -233,6 +233,12 @@ a:hover {
   padding: 0 var(--spacing-lg);
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+}
+
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(8px);

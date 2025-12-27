@@ -599,6 +599,7 @@ const Room = () => {
       <style>{`
         @media (max-width: 1024px) {
           .room-main-content {
+            margin-left: 280px;
             padding: ${activeTab === 'chat' ? '0' : '2rem 2rem'} !important;
           }
         }

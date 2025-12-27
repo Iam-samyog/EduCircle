@@ -33,7 +33,7 @@ const Navbar = () => {
       color: 'white',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
     }}>
-      <div className="container flex items-center justify-between">
+      <div className="container flex items-center justify-between nav-container">
         <Link to="/" className="flex items-center gap-md" style={{ textDecoration: 'none' }}>
           <h2 style={{ fontSize: '1.5rem', margin: 0, fontFamily: 'var(--font-serif)', color: 'white' }}>
             EduCircle

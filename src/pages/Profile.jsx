@@ -126,7 +126,7 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                         
                         {/* Full Name */}
                         <div className="input-group">
@@ -221,6 +221,13 @@ const Profile = () => {
             </div>
         )}
       </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .profile-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
