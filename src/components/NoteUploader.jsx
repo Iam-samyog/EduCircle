@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { processNote } from '../services/notesService';
 import { getCurrentUser } from '../services/auth';
-import { FaUpload, FaFileAlt, FaCheckCircle, FaSpinner, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaUpload, FaFileAlt, FaCheckCircle, FaSpinner, FaCloudUploadAlt, FaBrain } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const NoteUploader = ({ roomId, onNoteUploaded }) => {
