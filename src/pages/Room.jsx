@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { getRoomById, joinRoom, subscribeToRoom, generateRoomLink, approveJoinRequest, rejectJoinRequest } from '../services/roomService';
+import { getRoomById, joinRoom, subscribeToRoom, generateRoomLink, approveJoinRequest, rejectJoinRequest, deleteRoom } from '../services/roomService';
 import { getNotesByRoom, updateNoteSummary } from '../services/notesService';
 import { getCurrentUser, signOut } from '../services/auth';
-import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars } from 'react-icons/fa';
+import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars, FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import ChatBox from '../components/ChatBox';
@@ -98,6 +98,20 @@ const Room = () => {
       setCurrentFlashcards(flashcards); // Default to all
     } catch (error) {
       console.error('Error loading notes:', error);
+      toast.error('Failed to load notes');
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+      try {
+        await deleteRoom(roomId);
+        toast.success('Room deleted successfully');
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        toast.error('Failed to delete room');
+      }
     }
   };
 
@@ -406,6 +420,32 @@ const Room = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+        )}
+
+        {/* Admin Management Actions */}
+        {currentUserRole === 'admin' && (
+            <div className="card" style={{ margin: '1rem', padding: '1.5rem', background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+                <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', color: '#9A3412' }}>
+                    <FaLock style={{ marginRight: '0.5rem' }} /> 
+                    Room Administration
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                    <button 
+                        onClick={handleDeleteRoom}
+                        className="btn btn-sm"
+                        style={{ background: '#EF4444', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <FaTrash /> Delete Room (Permanent)
+                    </button>
+                    <button 
+                        onClick={() => setShowShareModal(true)}
+                        className="btn btn-sm"
+                        style={{ background: '#3B82F6', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <FaShare /> Copy Invite Link
+                    </button>
                 </div>
             </div>
         )}

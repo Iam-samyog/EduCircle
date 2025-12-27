@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/auth';
-import { createRoom, getRoomsByUser, generateRoomLink, getPublicRooms, requestJoin, joinRoom } from '../services/roomService';
-import { FaPlus, FaUsers, FaCopy, FaArrowRight, FaGlobe, FaLock, FaSearch } from 'react-icons/fa';
+import { createRoom, getRoomsByUser, generateRoomLink, getPublicRooms, requestJoin, joinRoom, deleteRoom } from '../services/roomService';
+import { FaPlus, FaUsers, FaCopy, FaArrowRight, FaGlobe, FaLock, FaSearch, FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import ShareModal from '../components/ShareModal';
@@ -59,6 +59,19 @@ const Dashboard = () => {
     } catch(error) {
         console.error(error);
         toast.error('Failed to join');
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+      try {
+        await deleteRoom(roomId);
+        toast.success('Room deleted successfully');
+        loadData(); // Reload rooms
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        toast.error('Failed to delete room');
+      }
     }
   };
 
@@ -210,6 +223,17 @@ const Dashboard = () => {
                     <FaPlus />
                     Share
                   </button>
+                  
+                  {room.createdBy === user.uid && (
+                    <button
+                      onClick={() => handleDeleteRoom(room.roomId)}
+                      className="btn btn-sm"
+                      style={{ background: 'transparent', color: '#EF4444', border: '1px solid #FECACA' }}
+                      title="Delete Room"
+                    >
+                      <FaTrash />
+                    </button>
+                  )}
                   
                   <button
                     onClick={() => navigate(`/room/${room.roomId}`)}

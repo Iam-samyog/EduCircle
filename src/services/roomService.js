@@ -12,7 +12,8 @@ import {
   onSnapshot,
   serverTimestamp,
   orderBy,
-  limit
+  limit,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -281,6 +282,19 @@ export const updateParticipantRole = async (roomId, userId, newRole, currentDeta
     });
   } catch (error) {
     console.error('Error updating role:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a room
+ */
+export const deleteRoom = async (roomId) => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    await deleteDoc(roomRef);
+  } catch (error) {
+    console.error('Error deleting room:', error);
     throw error;
   }
 };
