@@ -1,22 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut, getCurrentUser } from '../services/auth';
-import { FaHome, FaUser, FaSignOutAlt, FaBars, FaTimes, FaCircle } from 'react-icons/fa';
+import { FaHome, FaUser, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const user = getCurrentUser();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -28,160 +19,161 @@ const Navbar = () => {
     }
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
     <nav style={{ 
-      position: 'fixed', 
+      position: 'sticky', 
       top: 0, 
-      left: 0,
-      right: 0,
       zIndex: 1000,
-      height: 'var(--navbar-height)',
-      display: 'flex',
-      alignItems: 'center',
-      transition: 'all 0.3s ease',
-      background: scrolled ? 'rgba(15, 23, 42, 0.8)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(12px)' : 'none',
-      borderBottom: scrolled ? '1px solid var(--glass-border)' : 'none'
+      padding: '0.75rem 0',
+      background: 'linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)',
+      color: 'white',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
     }}>
-      <div className="container flex items-center justify-between">
+      <div className="container flex items-center justify-between nav-container">
         <Link to="/" className="flex items-center gap-md" style={{ textDecoration: 'none' }}>
-          <div style={{ 
-            width: '32px', 
-            height: '32px', 
-            background: 'var(--color-primary)', 
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 'var(--shadow-glow)'
-          }}>
-            <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
-          </div>
-          <h2 style={{ fontSize: '1.4rem', margin: 0, fontFamily: 'var(--font-display)', fontWeight: 800, color: 'white' }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, fontFamily: 'var(--font-serif)', color: 'white' }}>
             EduCircle
           </h2>
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden-mobile flex items-center gap-lg">
+        <div className="hidden-mobile flex items-center gap-md">
           {user ? (
             <>
-              <Link to="/dashboard" className="nav-link" style={navLinkStyle}>
+              <Link to="/dashboard" className="btn btn-sm" style={{ background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
+                <FaHome />
                 Dashboard
               </Link>
-              <Link to="/profile" className="nav-link" style={navLinkStyle}>
-                Profile
-              </Link>
-              <button onClick={handleSignOut} className="btn btn-secondary btn-sm" style={{ padding: '0.6rem 1.2rem' }}>
-                <FaSignOutAlt /> Sign Out
+
+              <button onClick={handleSignOut} className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }}>
+                <FaSignOutAlt />
+                Sign Out
               </button>
-              <Link to="/profile" className="avatar-small">
-                <img src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} alt="Profile" />
+
+              <Link to="/profile" className="avatar avatar-sm" style={{ borderColor: 'white', textDecoration: 'none', cursor: 'pointer' }} title="View Profile">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                    {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
               </Link>
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-link" style={navLinkStyle}>Login</Link>
-              <Link to="/signup" className="btn btn-primary btn-sm">Get Started</Link>
+              <Link to="/login" className="btn btn-sm" style={{ background: 'transparent', color: 'white', border: 'none', fontWeight: 500 }}>
+                Login
+              </Link>
+              <Link to="/signup" className="btn btn-sm" style={{ background: 'white', color: '#2563EB', border: 'none', fontWeight: 600 }}>
+                Get Started
+              </Link>
             </>
           )}
         </div>
 
         {/* Mobile Toggle */}
         <button 
-          className="show-mobile" 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="show-mobile hamburger-btn" 
+          onClick={toggleMobileMenu}
           style={{ 
-            background: 'transparent',
-            border: 'none',
-            color: 'white',
-            fontSize: '1.5rem',
-            cursor: 'pointer'
+            position: 'fixed',
+            top: '0.75rem',
+            right: '1rem',
+            width: '3rem',
+            height: '3rem',
+            zIndex: 1001
           }}
         >
-          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+          {isMobileMenuOpen ? <FaTimes style={{ fontSize: '1.2rem' }} /> : <FaBars style={{ fontSize: '1.2rem' }} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      <div style={{ 
-        position: 'fixed',
-        top: 'var(--navbar-height)',
-        left: 0,
-        right: 0,
-        background: 'var(--color-bg-main)',
-        height: isMobileMenuOpen ? 'auto' : '0',
-        overflow: 'hidden',
-        transition: 'all 0.3s ease',
-        borderBottom: isMobileMenuOpen ? '1px solid var(--glass-border)' : 'none',
-        zIndex: 999
-      }}>
-        <div className="container" style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {user ? (
-            <>
-              <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} style={mobileLinkStyle}>Dashboard</Link>
-              <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} style={mobileLinkStyle}>Profile</Link>
-              <button onClick={handleSignOut} className="btn btn-primary" style={{ width: '100%' }}>Sign Out</button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} style={mobileLinkStyle}>Login</Link>
-              <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)} className="btn btn-primary">Get Started</Link>
-            </>
-          )}
-        </div>
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          onClick={toggleMobileMenu}
+          style={{ 
+            position: 'fixed', 
+            top: '64px', 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 999
+          }} 
+        />
+      )}
+
+      {/* Mobile Menu Sidebar */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          top: '64px', 
+          right: isMobileMenuOpen ? 0 : '-280px', 
+          width: '280px', 
+          height: 'calc(100vh - 64px)', 
+          background: '#1E3A8A', 
+          zIndex: 1000, 
+          transition: 'right 0.3s ease',
+          padding: '2rem 1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}
+      >
+        {user ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <Link to="/profile" className="avatar avatar-md" style={{ textDecoration: 'none' }} onClick={toggleMobileMenu}>
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                    {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+              </Link>
+              <div>
+                <p style={{ margin: 0, fontWeight: 600 }}>{user.displayName || 'Student'}</p>
+                <Link to="/profile" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }} onClick={toggleMobileMenu}>View Profile</Link>
+              </div>
+            </div>
+
+            <Link to="/dashboard" className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: 'white', borderColor: 'rgba(255,255,255,0.2)' }} onClick={toggleMobileMenu}>
+              <FaHome /> Dashboard
+            </Link>
+
+            <button onClick={() => { handleSignOut(); toggleMobileMenu(); }} className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}>
+              <FaSignOutAlt /> Sign Out
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="btn btn-primary" onClick={toggleMobileMenu}>Login</Link>
+            <Link to="/signup" className="btn btn-ghost" style={{ color: 'white', borderColor: 'rgba(255,255,255,0.2)' }} onClick={toggleMobileMenu}>Get Started</Link>
+          </>
+        )}
       </div>
 
       <style>{`
-        .nav-link {
-          color: white;
-          text-decoration: none;
-          font-weight: 600;
-          font-size: 0.95rem;
-          opacity: 0.8;
-          transition: all 0.2s ease;
-        }
-        .nav-link:hover {
-          opacity: 1;
-          color: var(--color-primary-light);
-          text-decoration: none;
-        }
-        .avatar-small {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 2px solid var(--color-primary);
-          overflow: hidden;
-          transition: transform 0.2s ease;
-        }
-        .avatar-small:hover {
-          transform: scale(1.1);
-        }
-        .avatar-small img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
         @media (max-width: 768px) {
-          .hidden-mobile { display: none !important; }
+          .hidden-mobile {
+            display: none !important;
+          }
         }
         @media (min-width: 769px) {
-          .show-mobile { display: none !important; }
+          .show-mobile {
+            display: none !important;
+          }
         }
       `}</style>
     </nav>
   );
-};
-
-const navLinkStyle = {
-  cursor: 'pointer'
-};
-
-const mobileLinkStyle = {
-  color: 'white',
-  fontSize: '1.2rem',
-  fontWeight: 600,
-  textDecoration: 'none'
 };
 
 export default Navbar;
