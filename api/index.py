@@ -27,7 +27,10 @@ def summarize():
         summary = summarize_text(text)
         return jsonify({'summary': summary, 'extractedText': text}), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        print(f"ERROR in summarize: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e), 'details': 'Summarization failed. Check Vercel logs.'}), 500
 
 @app.route('/api/generate-flashcards', methods=['POST'])
 def flashcards():
@@ -50,7 +53,10 @@ def flashcards():
         flashcards = generate_flashcards(text)
         return jsonify({'flashcards': flashcards}), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        print(f"ERROR in flashcards: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e), 'details': 'Flashcard generation failed. Check Vercel logs.'}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health():

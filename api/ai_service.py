@@ -10,15 +10,20 @@ load_dotenv()
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Initialize Gemini model
-model = genai.GenerativeModel('gemini-1.5-flash')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    print("WARNING: GEMINI_API_KEY not found in environment variables")
+    model = None
 
 def summarize_text(text):
     """
     Summarize text using Google Gemini with enhanced prompting
     """
+    if not model:
+        return fallback_summarize(text)
+    
     try:
         prompt = f"""You are an expert educational content summarizer. Create a comprehensive yet concise summary of the following text.
 
@@ -47,6 +52,9 @@ def generate_flashcards(text):
     """
     Generate high-quality educational flashcards using Google Gemini
     """
+    if not model:
+        return fallback_generate_flashcards(text)
+    
     try:
         prompt = f"""You are an expert educator creating study flashcards. Based on the following text, create 8-12 high-quality flashcards that will help students learn and retain the material.
 
