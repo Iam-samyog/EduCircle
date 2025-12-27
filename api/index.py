@@ -74,13 +74,22 @@ def flashcards():
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    from ai_service import model
-    return jsonify({
-        'status': 'healthy', 
-        'source': 'vercel-serverless',
-        'ai_ready': model is not None,
-        'has_api_key': os.getenv('GEMINI_API_KEY') is not None
-    }), 200
+    try:
+        from ai_service import model
+        return jsonify({
+            'status': 'healthy', 
+            'source': 'vercel-serverless',
+            'ai_ready': model is not None,
+            'has_api_key': os.getenv('GEMINI_API_KEY') is not None
+        }), 200
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'Failed to import or initialize ai_service'
+        }), 200 # Return 200 so we can actually see the JSON
 
 # Vercel needs the app variable
 app = app
