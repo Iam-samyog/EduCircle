@@ -43,9 +43,13 @@ def summarize():
         summary = summarize_text(text)
         return jsonify({'summary': summary, 'extractedText': text}), 200 # Return extracted text too
     
+    except ValueError as ve:
+        # Known error, e.g., file extraction failed
+        print(f'User error in summarize endpoint: {str(ve)}')
+        return jsonify({'error': str(ve)}), 400
     except Exception as e:
         print(f'Error in summarize endpoint: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An unexpected error occurred while processing your request.'}), 500
 
 @app.route('/api/generate-flashcards', methods=['POST'])
 def flashcards():
@@ -71,9 +75,13 @@ def flashcards():
         flashcards = generate_flashcards(text)
         return jsonify({'flashcards': flashcards}), 200
     
+    except ValueError as ve:
+        # Known error, e.g., file extraction failed
+        print(f'User error in flashcards endpoint: {str(ve)}')
+        return jsonify({'error': str(ve)}), 400
     except Exception as e:
         print(f'Error in flashcards endpoint: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An unexpected error occurred while processing your request.'}), 500
 
 @app.route('/health', methods=['GET'])
 def health():
