@@ -36,7 +36,7 @@ def summarize():
         return jsonify({
             'error': str(e), 
             'details': error_details,
-            'message': 'Summarization failed. See details for debugging.'
+            'message': 'Summarization failed. See browser console for details.'
         }), 500
 
 @app.route('/api/generate-flashcards', methods=['POST'])
@@ -69,12 +69,18 @@ def flashcards():
         return jsonify({
             'error': str(e), 
             'details': error_details,
-            'message': 'Flashcard generation failed. See details for debugging.'
+            'message': 'Flashcard generation failed. See browser console for details.'
         }), 500
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'healthy', 'source': 'vercel-serverless'}), 200
+    from ai_service import model
+    return jsonify({
+        'status': 'healthy', 
+        'source': 'vercel-serverless',
+        'ai_ready': model is not None,
+        'has_api_key': os.getenv('GEMINI_API_KEY') is not None
+    }), 200
 
 # Vercel needs the app variable
 app = app

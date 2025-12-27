@@ -3,16 +3,23 @@ AI Service using Google Gemini for text summarization and flashcard generation
 """
 
 import os
+import io
 from dotenv import load_dotenv
 import google.generativeai as genai
+from pypdf import PdfReader
+from docx import Document
 
 load_dotenv()
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+    except Exception as e:
+        print(f"ERROR: Failed to initialize Gemini model: {str(e)}")
+        model = None
 else:
     print("WARNING: GEMINI_API_KEY not found in environment variables")
     model = None
@@ -22,6 +29,7 @@ def summarize_text(text):
     Summarize text using Google Gemini with enhanced prompting
     """
     if not model:
+        print("Using fallback summarization (Model not initialized)")
         return fallback_summarize(text)
     
     try:
@@ -53,6 +61,7 @@ def generate_flashcards(text):
     Generate high-quality educational flashcards using Google Gemini
     """
     if not model:
+        print("Using fallback flashcards (Model not initialized)")
         return fallback_generate_flashcards(text)
     
     try:
@@ -87,7 +96,16 @@ Return ONLY a JSON array of objects with 'question' and 'answer' fields. No mark
             if result_text.startswith('json'):
                 result_text = result_text[4:]
         
-        flashcards = json.loads(result_text.strip())
+        try:
+            flashcards = json.loads(result_text.strip())
+        except:
+            # Try finding the array if there's text around it
+            import re
+            match = re.search(r'\[.*\]', result_text.strip(), re.DOTALL)
+            if match:
+                flashcards = json.loads(match.group(0))
+            else:
+                raise ValueError("Could not find valid JSON array")
         
         # Validate format
         if isinstance(flashcards, list) and len(flashcards) > 0:
@@ -107,12 +125,6 @@ Return ONLY a JSON array of objects with 'question' and 'answer' fields. No mark
         print(f'Error in Gemini flashcard generation: {str(e)}')
         return fallback_generate_flashcards(text)
 
-import io
-from pypdf import PdfReader
-from docx import Document
-
-# ... (previous imports)
-
 def extract_text_from_file(file_storage, file_ext):
     """
     Extract text from uploaded file based on extension
@@ -121,6 +133,9 @@ def extract_text_from_file(file_storage, file_ext):
         text = ""
         # Create a seekable BytesIO stream from the uploaded file
         content = file_storage.read()
+        if not content:
+            raise ValueError("File is empty")
+            
         stream = io.BytesIO(content)
         
         if file_ext == '.pdf':
@@ -140,15 +155,15 @@ def extract_text_from_file(file_storage, file_ext):
     except Exception as e:
         print(f"Error extracting text from {file_ext}: {str(e)}")
         # Raise generic error for caller to handle
-        raise ValueError(f"Could not extract text from {file_ext} file")
-
-# ... (rest of simple fallbacks)
+        raise ValueError(f"Could not extract text from {file_ext} file: {str(e)}")
 
 def fallback_summarize(text):
     """Simple extractive summarization fallback"""
     import re
     sentences = re.split(r'[.!?]+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
+    if not sentences: return "No summary available."
+    
     summary_sentences = sentences[:min(3, len(sentences))]
     summary = '. '.join(summary_sentences) + '.'
     if len(summary) < 100 and len(sentences) > 3:

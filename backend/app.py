@@ -13,43 +13,39 @@ CORS(app)  # Enable CORS for frontend access
 def summarize():
     """Summarize text or file using AI"""
     try:
-        print(f"DEBUG: Processing summarize request. Files: {request.files}, JSON: {request.get_json(silent=True)}")
         text = ""
         # Check if file was uploaded
         if 'file' in request.files:
             file = request.files['file']
-            print(f"DEBUG: File uploaded: {file.filename}")
             if file.filename == '':
                 return jsonify({'error': 'No file selected'}), 400
             
-            # Get extension
-            import os
             _, ext = os.path.splitext(file.filename)
             text = extract_text_from_file(file, ext.lower())
-            print(f"DEBUG: Extracted text length: {len(text)}")
         else:
             # Check for JSON text
             data = request.get_json(silent=True)
             if data:
                 text = data.get('text', '')
-                print(f"DEBUG: Text from JSON length: {len(text)}")
-            else:
-                print("DEBUG: No JSON data found")
         
         if not text:
-            print("DEBUG: No text provided or extracted")
-            return jsonify({'error': 'No text provided. If using a PDF, ensure it contains selectable text (not scanned images).'}), 400
+            return jsonify({'error': 'No text provided'}), 400
         
+        print(f"DEBUG: Processing summarize request. Source: {'file' if 'file' in request.files else 'text'}")
         summary = summarize_text(text)
-        return jsonify({'summary': summary, 'extractedText': text}), 200 # Return extracted text too
+        print(f"DEBUG: Summarization complete. Success: {bool(summary)}")
+        return jsonify({'summary': summary, 'extractedText': text}), 200
     
-    except ValueError as ve:
-        # Known error, e.g., file extraction failed
-        print(f'User error in summarize endpoint: {str(ve)}')
-        return jsonify({'error': str(ve)}), 400
     except Exception as e:
-        print(f'Error in summarize endpoint: {str(e)}')
-        return jsonify({'error': 'An unexpected error occurred while processing your request.'}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR in summarize: {str(e)}")
+        print(error_details)
+        return jsonify({
+            'error': str(e), 
+            'details': error_details,
+            'message': 'Summarization failed. See browser console for details.'
+        }), 500
 
 @app.route('/api/generate-flashcards', methods=['POST'])
 def flashcards():
@@ -61,7 +57,6 @@ def flashcards():
             if file.filename == '':
                 return jsonify({'error': 'No file selected'}), 400
             
-            import os
             _, ext = os.path.splitext(file.filename)
             text = extract_text_from_file(file, ext.lower())
         else:
@@ -72,22 +67,33 @@ def flashcards():
         if not text:
             return jsonify({'error': 'No text provided'}), 400
         
+        print(f"DEBUG: Processing flashcards request. Source: {'file' if 'file' in request.files else 'text'}")
         flashcards = generate_flashcards(text)
+        print(f"DEBUG: Flashcard generation complete. Cards count: {len(flashcards) if flashcards else 0}")
         return jsonify({'flashcards': flashcards}), 200
     
-    except ValueError as ve:
-        # Known error, e.g., file extraction failed
-        print(f'User error in flashcards endpoint: {str(ve)}')
-        return jsonify({'error': str(ve)}), 400
     except Exception as e:
-        print(f'Error in flashcards endpoint: {str(e)}')
-        return jsonify({'error': 'An unexpected error occurred while processing your request.'}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR in flashcards: {str(e)}")
+        print(error_details)
+        return jsonify({
+            'error': str(e), 
+            'details': error_details,
+            'message': 'Flashcard generation failed. See browser console for details.'
+        }), 500
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check endpoint"""
-    return jsonify({'status': 'healthy'}), 200
+    """Health check endpoint with AI diagnostics"""
+    from ai_service import model
+    return jsonify({
+        'status': 'healthy',
+        'ai_ready': model is not None,
+        'has_api_key': os.getenv('GEMINI_API_KEY') is not None
+    }), 200
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 5001))
+    print(f"Starting local backend on port {port}...")
     app.run(host='0.0.0.0', port=port, debug=True)
