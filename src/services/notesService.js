@@ -11,7 +11,7 @@ import {
 import { db } from './firebase';
 import axios from 'axios';
 
-const AI_BACKEND_URL = import.meta.env.VITE_AI_BACKEND_URL || '/api';
+const AI_BACKEND_URL = import.meta.env.VITE_AI_BACKEND_URL || '';
 
 /**
  * Extract text from file (for now, assumes text files)

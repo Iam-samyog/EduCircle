@@ -24,7 +24,9 @@ def summarize():
         if not text:
             return jsonify({'error': 'No text provided'}), 400
         
+        print(f"DEBUG: Processing summarize request. Source: {'file' if 'file' in request.files else 'text'}")
         summary = summarize_text(text)
+        print(f"DEBUG: Summarization complete. Success: {bool(summary)}")
         return jsonify({'summary': summary, 'extractedText': text}), 200
     except Exception as e:
         import traceback
@@ -50,7 +52,9 @@ def flashcards():
         if not text:
             return jsonify({'error': 'No text provided'}), 400
         
+        print(f"DEBUG: Processing flashcards request. Source: {'file' if 'file' in request.files else 'text'}")
         flashcards = generate_flashcards(text)
+        print(f"DEBUG: Flashcard generation complete. Cards count: {len(flashcards) if flashcards else 0}")
         return jsonify({'flashcards': flashcards}), 200
     except Exception as e:
         import traceback
