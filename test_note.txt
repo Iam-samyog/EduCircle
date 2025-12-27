@@ -1,0 +1,9 @@
+This is a sample study note about photosynthesis.
+
+Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods from carbon dioxide and water. Photosynthesis in plants generally involves the green pigment chlorophyll and generates oxygen as a byproduct.
+
+The process of photosynthesis is commonly written as: 6CO2 + 6H2O → C6H12O6 + 6O2. This means that the reactants, six carbon dioxide molecules and six water molecules, are converted by light energy captured by chlorophyll into a sugar molecule and six oxygen molecules, the products.
+
+Plants need three main things for photosynthesis to occur: carbon dioxide, water, and sunlight. The carbon dioxide enters the plant through small pores called stomata. Water is absorbed by the roots and transported to the leaves. Sunlight is captured by the chlorophyll in the chloroplasts.
+
+There are two main stages of photosynthesis: the light-dependent reactions and the light-independent reactions (Calvin cycle). The light-dependent reactions occur in the thylakoid membranes and produce ATP and NADPH. The Calvin cycle occurs in the stroma and uses ATP and NADPH to convert carbon dioxide into glucose.
