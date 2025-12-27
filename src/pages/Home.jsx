@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { FaRocket, FaBrain, FaUsers, FaFileAlt, FaQuoteLeft, FaStar, FaGithub, FaTwitter, FaLinkedin, FaEnvelope, FaChevronLeft, FaChevronRight, FaPlay, FaMagic } from 'react-icons/fa';
+import { FaRocket, FaBrain, FaUsers, FaFileAlt, FaQuoteLeft, FaStar, FaGithub, FaTwitter, FaLinkedin, FaEnvelope, FaChevronLeft, FaChevronRight, FaPlay, FaSparkles } from 'react-icons/fa';
 
 /**
  * Geometric Particle Background Component
@@ -135,7 +135,7 @@ const Home = () => {
               }}
               whileHover={{ scale: 1.05 }}
             >
-              <FaMagic /> The Future of Learning is Here
+              <FaSparkles /> The Future of Learning is Here
             </motion.span>
 
             <h1 style={{ 
