@@ -5,9 +5,16 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  console.warn('WARNING: GEMINI_API_KEY is not defined in environment variables');
+}
+const genAI = new GoogleGenerativeAI(apiKey || '');
 
 export const generateSummaryAndFlashcards = async (file, manualText) => {
+  if (!apiKey) {
+    throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment variables.');
+  }
   try {
     let text = manualText || '';
 

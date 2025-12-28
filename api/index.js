@@ -33,8 +33,16 @@ app.post('/api/ai/analyze', upload.single('file'), async (req, res) => {
     const result = await generateSummaryAndFlashcards(file, manualText);
     res.json(result);
   } catch (error) {
-    console.error('AI Analysis Error:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    console.error('AI Analysis Error Detail:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      error: 'AI Analysis Failed', 
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
+    });
   }
 });
 

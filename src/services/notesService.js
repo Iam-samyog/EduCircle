@@ -51,8 +51,9 @@ export const analyzeContent = async (input) => {
 
     return response.data;
   } catch (error) {
-    console.error('AI Analysis Error:', error);
-    throw error;
+    const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+    console.error('AI Analysis Error:', errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
