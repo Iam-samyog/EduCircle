@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
-import { generateSummaryAndFlashcards } from './api/_aiService.js';
+// import { generateSummaryAndFlashcards } from './api/_aiService.js'; // AI service removed
 
 dotenv.config();
 
@@ -21,21 +21,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// AI analyze endpoint disabled
 app.post('/api/ai/analyze', upload.single('file'), async (req, res) => {
-  try {
-    const file = req.file;
-    const { text: manualText } = req.body;
-
-    if (!file && !manualText) {
-      return res.status(400).json({ error: 'No file or text provided' });
-    }
-
-    const result = await generateSummaryAndFlashcards(file, manualText);
-    res.json(result);
-  } catch (error) {
-    console.error('AI Analysis Error:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
-  }
+  // Return empty result since AI is removed
+  const result = { summary: '', flashcards: [] };
+  res.json(result);
 });
 
 app.listen(port, () => {

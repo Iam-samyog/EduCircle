@@ -21,14 +21,14 @@ const Home = () => {
       name: "Alex Johnson",
       role: "Medical Student",
       image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-      quote: "EduCircle transformed how my study group prepares for exams. The AI-generated flashcards save us hours of manual work!",
+      quote: "EduCircle transformed how my study group prepares for exams. The flashcard system makes reviewing so much more efficient!",
       rating: 5
     },
     {
       name: "Sarah Chen",
       role: "Computer Science Major",
       image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-      quote: "Being able to summarize complex research papers in seconds is a game-changer. The collaborative rooms feel like we're in the same library.",
+      quote: "Being able to organize complex research papers is a game-changer. The collaborative rooms feel like we're in the same library.",
       rating: 5
     },
     {
@@ -68,8 +68,8 @@ const Home = () => {
   const features = [
     {
       icon: <FaBrain />,
-      title: "AI-Powered",
-      desc: "Summarize notes and generate flashcards instantly with Google Gemini AI."
+      title: "Active Learning",
+      desc: "Create and organize your own flashcards and study materials manually for better retention."
     },
     {
       icon: <FaUsers />,
@@ -79,7 +79,7 @@ const Home = () => {
     {
       icon: <FaFileAlt />,
       title: "Smart Notes",
-      desc: "Upload PDFs or Docs and let our AI transform them into study materials."
+      desc: "Upload PDFs or Docs and organize them into structured study materials for your group."
     }
   ];
 
@@ -169,8 +169,8 @@ const Home = () => {
                 lineHeight: 1.6
               }}
             >
-              The all-in-one collaborative learning platform powered by AI. 
-              Chat, share notes, and quiz yourself with flashcards generated in seconds.
+              The all-in-one collaborative learning platform. 
+              Chat, share notes, and quiz yourself with custom flashcards.
             </motion.p>
 
             <motion.div variants={itemVariants} className="hero-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem' }}>
@@ -310,7 +310,7 @@ const Home = () => {
             <div style={{ gridColumn: 'span 2' }}>
               <h2 style={{ color: 'white', fontSize: '2rem', marginBottom: '1.5rem' }}>EduCircle</h2>
               <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '400px', lineHeight: 1.7 }}>
-                Revolutionizing how students collaborate and study. Join thousands of learners mastering their subjects with the power of AI and real-time collaboration.
+                Revolutionizing how students collaborate and study. Join thousands of learners mastering their subjects with real-time collaboration.
               </p>
               <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2rem' }}>
                 <a href="#" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.5rem' }}><FaGithub /></a>
@@ -323,7 +323,7 @@ const Home = () => {
             <div>
               <h4 style={{ color: 'white', marginBottom: '1.5rem' }}>Platform</h4>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {['Browse Rooms', 'AI Tools', 'Flashcards', 'Rewards'].map(item => (
+                {['Browse Rooms', 'Notes', 'Flashcards', 'Rewards'].map(item => (
                   <li key={item} style={{ marginBottom: '1rem' }}>
                     <a href="#" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontWeight: 400 }}>{item}</a>
                   </li>

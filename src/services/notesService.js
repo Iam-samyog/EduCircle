@@ -10,77 +10,11 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
-import axios from 'axios';
-
-const AI_BACKEND_URL = import.meta.env.VITE_AI_BACKEND_URL || '';
 
 /**
- * Extract text from file (for now, assumes text files)
+ * Save a new note to Firestore (no AI processing)
  */
-export const extractTextFromFile = async (file) => {
-  try {
-    if (file.type === 'text/plain') {
-      return await file.text();
-    }
-    
-    // For PDF/DOCX, you would need additional libraries
-    // For MVP, we'll just handle text files
-    throw new Error('Only text files are supported in this version');
-  } catch (error) {
-    console.error('Error extracting text:', error);
-    throw error;
-  }
-};
-
-/**
- * Analyze note using unified AI backend
- */
-export const analyzeContent = async (input) => {
-  try {
-    const formData = new FormData();
-    if (input instanceof File) {
-      formData.append('file', input);
-    } else {
-      formData.append('text', input);
-    }
-
-    const response = await axios.post(`${AI_BACKEND_URL}/api/ai/analyze`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    return response.data;
-  } catch (error) {
-    let errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
-    if (typeof errorMsg === 'object') {
-      errorMsg = JSON.stringify(errorMsg);
-    }
-    console.error('AI Analysis Error:', errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * Summarize note using AI backend
- */
-export const summarizeNote = async (input) => {
-  const data = await analyzeContent(input);
-  return { summary: data.summary, extractedText: data.summary }; // Backend doesn't return raw text yet, using summary as placeholder or we can update backend
-};
-
-/**
- * Generate flashcards using AI backend
- */
-export const generateFlashcards = async (input) => {
-  const data = await analyzeContent(input);
-  return data.flashcards;
-};
-
-/**
- * Save note data to Firestore
- */
-export const saveNoteData = async (roomId, userId, userName, noteData) => {
+export const saveNote = async (roomId, userId, userName, noteData) => {
   try {
     const notesRef = collection(db, 'notes');
     
@@ -88,17 +22,16 @@ export const saveNoteData = async (roomId, userId, userName, noteData) => {
       roomId,
       uploadedBy: userId,
       uploadedByName: userName,
-      originalText: noteData.originalText,
-      summary: noteData.summary,
-      flashcards: noteData.flashcards,
-      fileName: noteData.fileName,
+      content: noteData.content || '',
+      fileName: noteData.fileName || null,
+      flashcards: noteData.flashcards || [],
       uploadedAt: serverTimestamp()
     };
     
     const docRef = await addDoc(notesRef, data);
     return { id: docRef.id, ...data };
   } catch (error) {
-    console.error('Error saving note data:', error);
+    console.error('Error saving note:', error);
     throw error;
   }
 };
@@ -128,44 +61,17 @@ export const getNotesByRoom = async (roomId) => {
 };
 
 /**
- * Process note: extract text, summarize, and generate flashcards
- * Supports PDF, DOCX, TXT via backend processing
+ * Update note content
  */
-export const processNote = async (roomId, userId, userName, file) => {
-  try {
-    // Single AI call for both summary and flashcards
-    const data = await analyzeContent(file);
-    
-    const { summary, flashcards, keyPoints } = data;
-    
-    // Save to Firestore
-    const noteData = await saveNoteData(roomId, userId, userName, {
-      originalText: "Extracted from " + file.name,
-      summary,
-      flashcards,
-      keyPoints, // Adding keypoints support too
-      fileName: file.name
-    });
-    
-    return noteData;
-  } catch (error) {
-    console.error('Error processing note:', error);
-    throw error;
-  }
-};
-
-/**
- * Update note summary
- */
-export const updateNoteSummary = async (noteId, newSummary) => {
+export const updateNoteContent = async (noteId, newContent) => {
   try {
     const noteRef = doc(db, 'notes', noteId);
     await updateDoc(noteRef, {
-      summary: newSummary,
+      content: newContent,
       updatedAt: serverTimestamp()
     });
   } catch (error) {
-    console.error('Error updating summary:', error);
+    console.error('Error updating note:', error);
     throw error;
   }
 };
@@ -195,6 +101,32 @@ export const updateNoteFlashcards = async (noteId, flashcards) => {
     });
   } catch (error) {
     console.error('Error updating flashcards:', error);
+    throw error;
+  }
+};
+
+/**
+ * Add a single flashcard to a note
+ */
+export const addFlashcardToNote = async (noteId, flashcard) => {
+  try {
+    const noteRef = doc(db, 'notes', noteId);
+    const notesQuery = query(collection(db, 'notes'), where('__name__', '==', noteId));
+    const snapshot = await getDocs(notesQuery);
+    
+    if (snapshot.empty) {
+      throw new Error('Note not found');
+    }
+
+    const noteDoc = snapshot.docs[0];
+    const currentFlashcards = noteDoc.data().flashcards || [];
+    
+    await updateDoc(noteRef, {
+      flashcards: [...currentFlashcards, flashcard],
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error adding flashcard:', error);
     throw error;
   }
 };

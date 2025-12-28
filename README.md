@@ -1,21 +1,19 @@
-# EduCircle - AI-Powered Collaborative Study Platform
+# EduCircle - Collaborative Study Platform
 
 ![EduCircle](https://img.shields.io/badge/EduCircle-Study%20Together-6366f1)
 ![React](https://img.shields.io/badge/React-18-61dafb)
 ![Firebase](https://img.shields.io/badge/Firebase-Realtime-orange)
-![Python](https://img.shields.io/badge/Python-Flask-blue)
 
-**EduCircle** is a modern, AI-powered collaborative study platform where students can create study rooms, chat in real-time, upload notes for AI summarization, generate flashcards automatically, and track study goals together.
+**EduCircle** is a modern collaborative study platform where students can create study rooms, chat in real-time, share and edit notes, create custom flashcards, and track study goals together.
 
 ## ✨ Features
 
 - 🔐 **Authentication** - Email/password and Google OAuth
 - 🏠 **Study Rooms** - Create and join collaborative study spaces
 - 💬 **Real-time Chat** - Live messaging with timestamps and avatars
-- 📝 **Note Upload** - Drag-and-drop note uploads with AI processing
-- 🤖 **AI Summarization** - Automatic note summarization
-- 🎴 **Flashcard Generation** - AI-generated flashcards from notes
-- 🎯 **Study Goals** - Track progress with real-time updates
+- 📝 **Manual Notes** - Create, upload (.txt), and edit study notes manually
+- 🎴 **Custom Flashcards** - Create and study your own flashcard decks
+- 🎯 **Study Goals** - Track progress and milestones with your group
 - 🎨 **Modern UI** - Glassmorphism design with smooth animations
 - 📱 **Responsive** - Works on desktop, tablet, and mobile
 
@@ -118,44 +116,13 @@ cp .env.example .env
 # ... etc
 ```
 
-### 4. Backend Setup
+### 4. Run the Application
 
-```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Mac/Linux:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create environment file
-cp .env.example .env
-```
-
-### 5. Run the Application
-
-**Terminal 1 - Frontend:**
 ```bash
 npm run dev
 ```
 
-**Terminal 2 - Backend:**
-```bash
-cd backend
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-python app.py
-```
-
-The frontend will be available at `http://localhost:5173`  
-The backend will be available at `http://localhost:5000`
+The application will be available at `http://localhost:5173`
 
 ## 🔧 Configuration
 

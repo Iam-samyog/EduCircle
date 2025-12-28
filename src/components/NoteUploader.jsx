@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { processNote } from '../services/notesService';
+import { saveNote } from '../services/notesService';
 import { getCurrentUser } from '../services/auth';
-import { FaUpload, FaFileAlt, FaCheckCircle } from 'react-icons/fa';
+import { FaUpload, FaFileAlt, FaCheckCircle, FaPen } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const NoteUploader = ({ roomId, onNoteUploaded }) => {
   const [uploading, setUploading] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [noteTitle, setNoteTitle] = useState('');
   const user = getCurrentUser();
 
   const handleDrag = (e) => {
@@ -39,137 +40,188 @@ const NoteUploader = ({ roomId, onNoteUploaded }) => {
   };
 
   const handleFile = async (file) => {
-    // Validate file type
-    const validTypes = ['text/plain', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    // We also check extension because sometimes mime type is empty or incorrect
-    const validExtensions = ['.txt', '.pdf', '.doc', '.docx'];
-    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-    
-    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-      toast.error('Supported formats: .txt, .pdf, .doc, .docx');
+    // Validate file type - only text files for simplicity
+    if (!file.type.startsWith('text/') && file.name.endsWith('.txt') === false) {
+      toast.error('Only text files (.txt) are supported for now');
       return;
     }
 
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error('File size must be less than 10MB');
+      toast.error('File size must be less than 5MB');
       return;
     }
 
     setUploading(true);
-    setProgress(0);
 
     try {
-      // Simulate progress for upload
-      setProgress(20);
-      toast.loading('Uploading note...', { id: 'upload' });
-
-      setProgress(40);
-      setProcessing(true);
-      toast.loading('Processing with AI...', { id: 'upload' });
-
-      setProgress(60);
-      const noteData = await processNote(
+      const content = await file.text();
+      
+      const noteData = await saveNote(
         roomId,
         user.uid,
         user.displayName || 'Anonymous',
-        file
+        {
+          content,
+          fileName: file.name,
+          flashcards: []
+        }
       );
 
-      setProgress(100);
-      toast.success('Note processed successfully!', { id: 'upload' });
+      toast.success('Note saved successfully!');
 
       if (onNoteUploaded) {
         onNoteUploaded(noteData);
       }
-
-      // Reset after a delay
-      setTimeout(() => {
-        setProgress(0);
-        setProcessing(false);
-      }, 1000);
     } catch (error) {
-      console.error('Error processing note:', error);
-      toast.error(error.message || 'Failed to process note', { id: 'upload' });
-      setProgress(0);
-      setProcessing(false);
+      console.error('Error saving note:', error);
+      toast.error(error.message || 'Failed to save note');
     } finally {
       setUploading(false);
     }
   };
 
+  const handleTextSubmit = async () => {
+    if (!noteText.trim()) {
+      toast.error('Please enter some content');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const noteData = await saveNote(
+        roomId,
+        user.uid,
+        user.displayName || 'Anonymous',
+        {
+          content: noteText,
+          fileName: noteTitle || 'Untitled Note',
+          flashcards: []
+        }
+      );
+
+      toast.success('Note saved successfully!');
+      setNoteText('');
+      setNoteTitle('');
+      setShowTextInput(false);
+
+      if (onNoteUploaded) {
+        onNoteUploaded(noteData);
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
+      toast.error(error.message || 'Failed to save note');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (showTextInput) {
+    return (
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
+          <h3>Create New Note</h3>
+          <button 
+            className="btn btn-ghost" 
+            onClick={() => setShowTextInput(false)}
+          >
+            Cancel
+          </button>
+        </div>
+        
+        <input
+          type="text"
+          className="input"
+          placeholder="Note Title (optional)"
+          value={noteTitle}
+          onChange={(e) => setNoteTitle(e.target.value)}
+          style={{ marginBottom: '1rem' }}
+        />
+        
+        <textarea
+          className="input"
+          placeholder="Type your notes here..."
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          style={{ 
+            minHeight: '200px', 
+            resize: 'vertical',
+            fontFamily: 'inherit'
+          }}
+        />
+        
+        <button
+          className="btn btn-primary"
+          onClick={handleTextSubmit}
+          disabled={uploading || !noteText.trim()}
+          style={{ marginTop: '1rem', width: '100%' }}
+        >
+          {uploading ? <div className="spinner spinner-sm"></div> : 'Save Note'}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div
-        className={`glass uploader-container ${dragActive ? 'animate-glow' : ''}`}
-        style={{
-          padding: '3rem 2rem',
-          textAlign: 'center',
-          border: `2px dashed ${dragActive ? 'var(--color-primary)' : 'var(--glass-border)'}`,
-          borderRadius: 'var(--radius-lg)',
-          cursor: 'pointer',
-          transition: 'all var(--transition-base)'
-        }}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={() => document.getElementById('file-input').click()}
-      >
-        <input
-          id="file-input"
-          type="file"
-          accept=".txt,.pdf,.doc,.docx"
-          onChange={handleChange}
-          style={{ display: 'none' }}
-          disabled={uploading}
-        />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        {/* Upload File Option */}
+        <div
+          className={`card card-hover ${dragActive ? 'animate-glow' : ''}`}
+          style={{
+            padding: '2rem',
+            textAlign: 'center',
+            border: `2px dashed ${dragActive ? 'var(--color-primary)' : 'var(--glass-border)'}`,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById('file-input').click()}
+        >
+          <input
+            id="file-input"
+            type="file"
+            accept=".txt"
+            onChange={handleChange}
+            style={{ display: 'none' }}
+            disabled={uploading}
+          />
 
-        {uploading ? (
-          <div>
-            <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
-            <p className="text-lg font-semibold">
-              {processing ? 'Processing with AI...' : 'Uploading...'}
-            </p>
-            <div className="progress progress-lg" style={{ maxWidth: '300px', margin: '1rem auto 0' }}>
-              <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+          {uploading ? (
+            <div>
+              <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+              <p>Saving...</p>
             </div>
-            <p className="text-sm text-muted" style={{ marginTop: '0.5rem' }}>
-              {progress}%
-            </p>
-          </div>
-        ) : (
-          <div>
-            <FaUpload style={{ fontSize: '3rem', color: 'var(--color-primary)', marginBottom: '1rem' }} />
-            <p className="text-lg font-semibold" style={{ marginBottom: '0.5rem' }}>
-              Drop your notes here or click to browse
-            </p>
-            <p className="text-sm text-muted">
-              Supports .txt, .pdf, .docx (up to 10MB)
-            </p>
-            <p className="text-sm text-muted" style={{ marginTop: '1rem' }}>
-              AI will automatically summarize and generate flashcards
-            </p>
-          </div>
-        )}
-      </div>
-
-      {progress === 100 && (
-        <div className="flex items-center justify-center gap-sm animate-slideUp" style={{ marginTop: '1rem' }}>
-          <FaCheckCircle style={{ color: 'var(--color-success)', fontSize: '1.5rem' }} />
-          <p className="text-lg font-semibold" style={{ color: 'var(--color-success)' }}>
-            Note processed successfully!
-          </p>
+          ) : (
+            <div>
+              <FaUpload style={{ fontSize: '2.5rem', color: 'var(--color-primary)', marginBottom: '1rem' }} />
+              <p className="font-semibold">Upload File</p>
+              <p className="text-sm text-muted">Drop .txt file or click</p>
+            </div>
+          )}
         </div>
-      )}
-      <style>{`
-        @media (max-width: 768px) {
-          .uploader-container {
-            padding: 1.5rem 1rem !important;
-          }
-        }
-      `}</style>
+
+        {/* Type Note Option */}
+        <div
+          className="card card-hover"
+          style={{
+            padding: '2rem',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => setShowTextInput(true)}
+        >
+          <FaPen style={{ fontSize: '2.5rem', color: 'var(--color-success)', marginBottom: '1rem' }} />
+          <p className="font-semibold">Type Notes</p>
+          <p className="text-sm text-muted">Write notes manually</p>
+        </div>
+      </div>
     </div>
   );
 };

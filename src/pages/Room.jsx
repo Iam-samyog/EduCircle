@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getRoomById, joinRoom, subscribeToRoom, generateRoomLink, approveJoinRequest, rejectJoinRequest, deleteRoom } from '../services/roomService';
-import { getNotesByRoom, updateNoteSummary, deleteNote, updateNoteFlashcards } from '../services/notesService';
+import { getNotesByRoom, updateNoteContent, deleteNote, updateNoteFlashcards } from '../services/notesService';
 import { getCurrentUser, signOut } from '../services/auth';
-import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars, FaTrash } from 'react-icons/fa';
+import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars, FaTrash, FaPlus } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import ChatBox from '../components/ChatBox';
@@ -11,9 +11,6 @@ import NoteUploader from '../components/NoteUploader';
 import Flashcards from '../components/Flashcards';
 import StudyGoals from '../components/StudyGoals';
 import ShareModal from '../components/ShareModal';
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
 
 const Room = () => {
   const { roomId } = useParams();
@@ -29,10 +26,15 @@ const Room = () => {
   const [studyingNoteId, setStudyingNoteId] = useState(null);
   
   const [showShareModal, setShowShareModal] = useState(false);
-  const [selectedNote, setSelectedNote] = useState(null); // For Summary Modal
+  const [selectedNote, setSelectedNote] = useState(null);
   const [isEditingNote, setIsEditingNote] = useState(false);
-  const [editedSummary, setEditedSummary] = useState('');
+  const [editedContent, setEditedContent] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Flashcard creation state
+  const [showFlashcardForm, setShowFlashcardForm] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
   
   const navigate = useNavigate();
   const user = getCurrentUser();
@@ -143,20 +145,20 @@ const Room = () => {
   };
 
   const handleEditNote = () => {
-    setEditedSummary(selectedNote.summary);
+    setEditedContent(selectedNote.content);
     setIsEditingNote(true);
   };
 
   const handleSaveNote = async () => {
     try {
-      await updateNoteSummary(selectedNote.id, editedSummary);
-      toast.success('Summary updated!');
+      await updateNoteContent(selectedNote.id, editedContent);
+      toast.success('Note updated!');
       setIsEditingNote(false);
-      setSelectedNote({ ...selectedNote, summary: editedSummary });
+      setSelectedNote({ ...selectedNote, content: editedContent });
       loadNotes();
     } catch (error) {
-      console.error('Error updating summary:', error);
-      toast.error('Failed to update summary');
+      console.error('Error updating note:', error);
+      toast.error('Failed to update note');
     }
   };
   const handleDeleteNote = async (noteId, e) => {
@@ -202,7 +204,7 @@ const Room = () => {
 
   const handleCancelEdit = () => {
     setIsEditingNote(false);
-    setEditedSummary('');
+    setEditedContent('');
   };
 
 
@@ -562,7 +564,7 @@ const Room = () => {
                             fontSize: '0.9rem',
                             color: '#6B7280'
                           }}>
-                            {note.summary || 'No summary generated.'}
+                            {note.content || 'Empty note.'}
                           </p>
                           <div className="flex justify-between items-center" style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
                             <span className="text-xs text-muted">By {note.uploadedByName}</span>
@@ -629,7 +631,7 @@ const Room = () => {
               </div>
               <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <h4 style={{ color: '#374151', margin: 0 }}>Summary</h4>
+                    <h4 style={{ color: '#374151', margin: 0 }}>Content</h4>
                     {!isEditingNote && (
                       <button className="btn btn-sm btn-secondary" onClick={handleEditNote}>
                         Edit
@@ -639,11 +641,11 @@ const Room = () => {
                   
                   {isEditingNote ? (
                     <textarea
-                      value={editedSummary}
-                      onChange={(e) => setEditedSummary(e.target.value)}
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
                       style={{
                         width: '100%',
-                        minHeight: '200px',
+                        minHeight: '300px',
                         padding: '1rem',
                         border: '1px solid #E5E7EB',
                         borderRadius: '8px',
@@ -654,29 +656,9 @@ const Room = () => {
                       }}
                     />
                   ) : (
-                    <div style={{ lineHeight: '1.6', color: '#4B5563', whiteSpace: 'pre-wrap' }}>
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkMath]} 
-                          rehypePlugins={[rehypeKatex]}
-                        >
-                          {selectedNote.summary || 'Processing summary...'}
-                        </ReactMarkdown>
+                    <div style={{ lineHeight: '1.6', color: '#4B5563', whiteSpace: 'pre-wrap', minHeight: '200px' }}>
+                        {selectedNote.content || 'Empty content.'}
                     </div>
-                  )}
-                  
-                  {selectedNote.keyPoints && (
-                     <div style={{ marginTop: '1.5rem' }}>
-                         <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>Key Points</h4>
-                         <ul style={{ paddingLeft: '1.25rem', color: '#4B5563' }}>
-                             {selectedNote.keyPoints.map((point, i) => (
-                                 <li key={i} style={{ marginBottom: '0.25rem' }}>
-                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                                        {point}
-                                    </ReactMarkdown>
-                                  </li>
-                             ))}
-                         </ul>
-                     </div>
                   )}
               </div>
               <div className="modal-footer" style={{ justifyContent: 'space-between' }}>

@@ -16,36 +16,17 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok',
     mode: 'production-serverless',
-    aiReady: !!process.env.GEMINI_API_KEY,
-    keyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+    // aiReady flag removed
+    // keyLength flag removed
     timestamp: new Date().toISOString()
   });
 });
 
+// AI analyze endpoint disabled
 app.post('/api/ai/analyze', upload.single('file'), async (req, res) => {
-  try {
-    const { generateSummaryAndFlashcards } = await import('./_aiService.js');
-    const file = req.file;
-    const { text: manualText } = req.body;
-
-    if (!file && !manualText) {
-      return res.status(400).json({ error: 'No file or text provided' });
-    }
-
-    const result = await generateSummaryAndFlashcards(file, manualText);
-    res.json(result);
-  } catch (error) {
-    console.error('AI Analysis Error Detail:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-    res.status(500).json({ 
-      error: 'AI Analysis Failed', 
-      message: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
-    });
-  }
+  // AI functionality disabled; return empty result
+  const result = { summary: '', flashcards: [] };
+  res.json(result);
 });
 
 // Handle 404s for API
