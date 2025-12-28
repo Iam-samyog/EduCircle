@@ -209,7 +209,7 @@ const ChatBox = ({ roomId, roomName, participantCount }) => {
               borderRadius: '2rem',
               color: '#1F2937',
               padding: '1rem 1.5rem',
-              fontSize: '1rem',
+              fontSize: '16px', // Force 16px to prevent mobile zoom
               outline: 'none',
               fontFamily: 'var(--font-sans)'
             }}
@@ -256,6 +256,9 @@ const ChatBox = ({ roomId, roomName, participantCount }) => {
           }
           .chat-input-form {
             padding: 1rem !important;
+          }
+          .chat-input-form input {
+            font-size: 16px !important; /* Double-check to prevent iOS zoom */
           }
         }
       `}</style>
