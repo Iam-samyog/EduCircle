@@ -13,39 +13,32 @@ if (typeof globalThis.Path2D === 'undefined') globalThis.Path2D = class {};
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-let pdf;
-try {
-  const pdf_parse = require('pdf-parse');
-  // Handle various export patterns (CJS, ESM, etc)
-  if (typeof pdf_parse === 'function') {
-    pdf = pdf_parse;
-  } else if (pdf_parse && typeof pdf_parse.default === 'function') {
-    pdf = pdf_parse.default;
-  } else if (pdf_parse && typeof pdf_parse.pdf === 'function') {
-    pdf = pdf_parse.pdf;
-  } else {
-    // Try to require the internal lib directly if the main export is weird
-    try {
-      pdf = require('pdf-parse/lib/pdf-parse.js');
-    } catch (e2) {
-      console.error('Failed to require internal pdf-parse:', e2);
-    }
-  }
-} catch (e) {
-  console.error('Initial pdf-parse require failed:', e);
-}
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
 
 export const generateSummaryAndFlashcards = async (file, manualText) => {
-  if (file && file.mimetype === 'application/pdf' && typeof pdf !== 'function') {
-    throw new Error('PDF library failed to load correctly. Please try a different file format like .txt or .docx.');
-  }
+  console.log('--- generateSummaryAndFlashcards Entry ---');
   
+  // Dynamic require for PDF to handle Vercel issues
+  let pdf;
+  try {
+    const pdf_parse = require('pdf-parse');
+    console.log('Require pdf-parse result type:', typeof pdf_parse);
+    if (typeof pdf_parse === 'function') {
+      pdf = pdf_parse;
+    } else if (pdf_parse && typeof pdf_parse.default === 'function') {
+      pdf = pdf_parse.default;
+    } else {
+      console.warn('pdf-parse is not a function, trying internal path...');
+      pdf = require('pdf-parse/lib/pdf-parse.js');
+    }
+  } catch (e) {
+    console.error('PDF require error:', e.message);
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API Key is missing (GEMINI_API_KEY not found in process.env)');
+    throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment variables.');
   }
   
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -54,7 +47,11 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
     let text = manualText || '';
 
     if (file) {
+      console.log('Processing file:', file.originalname, 'mime:', file.mimetype);
       if (file.mimetype === 'application/pdf') {
+        if (typeof pdf !== 'function') {
+          throw new Error('PDF extraction is currently unavailable on the server. Please copy-paste the text instead.');
+        }
         const data = await pdf(file.buffer, {
           pagerender: () => "" // Skip rendering to avoid canvas/DOMMatrix issues
         });
@@ -70,10 +67,19 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
     }
 
     if (!text || text.trim().length < 50) {
-      throw new Error('Content too short for analysis');
+      throw new Error('The document content seems too short for AI analysis. Please provide more text.');
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    console.log('Extracted text length:', text.length);
+
+    // Using gemini-1.5-flash which is standard. If it 404s, we'll try gemini-pro.
+    let model;
+    try {
+      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    } catch (e) {
+      console.warn('Failed to load gemini-1.5-flash, falling back to gemini-pro');
+      model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    }
 
     const prompt = `
       Analyze the following educational content and provide:
@@ -91,12 +97,14 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
       Ensure all text inside the JSON strings is properly escaped for JSON compatibility, especially LaTeX backslashes.
 
       Content:
-      ${text.substring(0, 10000)}
+      ${text.substring(0, 15000)}
     `;
 
+    console.log('Sending request to Gemini...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let jsonText = response.text();
+    console.log('Received response from Gemini');
     
     // Improved JSON extraction: Find the first '{' and last '}'
     const firstBrace = jsonText.indexOf('{');
@@ -104,7 +112,7 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
     
     if (firstBrace === -1 || lastBrace === -1) {
       console.error('Raw AI Response:', jsonText);
-      throw new Error('AI returned invalid format (No JSON found)');
+      throw new Error('AI returned an unexpected format. Please try again.');
     }
     
     jsonText = jsonText.substring(firstBrace, lastBrace + 1);
@@ -113,7 +121,7 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
       return JSON.parse(jsonText);
     } catch (parseError) {
       console.error('Failed to parse AI JSON:', jsonText);
-      throw new Error('AI returned unparseable content');
+      throw new Error('AI returned data that couldn\'t be processed. Try a shorter segment of text.');
     }
   } catch (error) {
     console.error('AI Service Error:', error);
