@@ -100,7 +100,7 @@ const ChatBox = ({ roomId, roomName, participantCount }) => {
         alignItems: 'center',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
       }}>
-         <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-serif)', margin: 0, color: '#1E3A8A' }}>{roomName || 'Chat'}</h2>
+         <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-serif)', margin: 0, color: 'var(--color-primary-dark)' }}>{roomName || 'Chat'}</h2>
          <div className="flex items-center gap-sm text-secondary">
             <FaUsers />
             <span style={{ fontSize: '0.9rem' }}>{participantCount || 0} active</span>
@@ -154,11 +154,11 @@ const ChatBox = ({ roomId, roomName, participantCount }) => {
                 <div className="message-bubble" style={{
                   maxWidth: '70%',
                   padding: '1.25rem 1.5rem',
-                  background: isOwnMessage ? '#2563EB' : '#FFFFFF',
+                  background: isOwnMessage ? 'var(--color-primary)' : '#FFFFFF',
                   color: isOwnMessage ? '#FFFFFF' : '#1F2937',
                   border: isOwnMessage ? 'none' : '1px solid #E5E7EB',
                   borderRadius: isOwnMessage ? '24px 24px 4px 24px' : '24px 24px 24px 4px',
-                  boxShadow: isOwnMessage ? '0 4px 10px rgba(37, 99, 235, 0.2)' : '0 2px 5px rgba(0,0,0,0.03)',
+                  boxShadow: isOwnMessage ? '0 4px 10px rgba(0, 0, 0, 0.1)' : '0 2px 5px rgba(0,0,0,0.03)',
                   fontSize: '1.1rem',
                   lineHeight: '1.5',
                   wordWrap: 'break-word',
@@ -218,7 +218,7 @@ const ChatBox = ({ roomId, roomName, participantCount }) => {
             type="submit"
             disabled={sending || !newMessage.trim()}
             style={{
-              background: '#2563EB',
+              background: 'var(--color-primary)',
               color: 'white',
               border: 'none',
               width: '3.25rem',
@@ -229,7 +229,7 @@ const ChatBox = ({ roomId, roomName, participantCount }) => {
               justifyContent: 'center',
               cursor: 'pointer',
               transition: 'transform 0.2s, background 0.2s',
-              boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)'
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.2)'
             }}
           >
             {sending ? <div className="spinner spinner-sm" style={{ borderTopColor: 'white', borderLeftColor: 'white' }}></div> : <FaPaperPlane />}

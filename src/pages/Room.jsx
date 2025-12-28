@@ -190,7 +190,7 @@ const Room = () => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#F9FAFB' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--color-bg-primary)' }}>
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
@@ -397,7 +397,7 @@ const Room = () => {
         
         {/* Viewer Banner */}
         {currentUserRole === 'viewer' && (
-            <div style={{ background: '#3B82F6', color: 'white', padding: '0.75rem', textAlign: 'center', fontWeight: 500 }}>
+            <div style={{ background: 'var(--color-primary)', color: 'white', padding: '0.75rem', textAlign: 'center', fontWeight: 500 }}>
                 <FaLock style={{ marginRight: '0.5rem', marginBottom: '2px' }} />
                 You are in Viewer Mode. Request access to chat and edit.
             </div>
@@ -405,18 +405,18 @@ const Room = () => {
 
         {/* Admin Join Requests Panel */}
         {currentUserRole === 'admin' && room.joinRequests?.length > 0 && (
-            <div className="card" style={{ margin: '1rem', padding: '1rem', background: '#F0F9FF', border: '1px solid #BAE6FD' }}>
-                <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', color: '#0369A1' }}>
+            <div className="card" style={{ margin: '1rem', padding: '1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
+                <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', color: 'var(--color-text-primary)' }}>
                     <FaUserPlus style={{ marginRight: '0.5rem' }} /> 
                     Join Requests ({room.joinRequests.length})
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {room.joinRequests.map((req, idx) => (
                         <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '0.75rem', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                            <span style={{ fontWeight: 500, color: '#0C4A6E' }}>{req.userName}</span>
+                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{req.userName}</span>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => approveJoinRequest(roomId, req)} className="btn btn-sm" style={{ background: '#10B981', color: 'white', border: 'none' }}><FaCheck /></button>
-                                <button onClick={() => rejectJoinRequest(roomId, req)} className="btn btn-sm" style={{ background: '#EF4444', color: 'white', border: 'none' }}><FaTimes /></button>
+                                <button onClick={() => approveJoinRequest(roomId, req)} className="btn btn-sm" style={{ background: 'var(--color-success)', color: 'white', border: 'none' }}><FaCheck /></button>
+                                <button onClick={() => rejectJoinRequest(roomId, req)} className="btn btn-sm" style={{ background: 'var(--color-error)', color: 'white', border: 'none' }}><FaTimes /></button>
                             </div>
                         </div>
                     ))}
@@ -442,7 +442,7 @@ const Room = () => {
                     <button 
                         onClick={() => setShowShareModal(true)}
                         className="btn btn-sm"
-                        style={{ background: '#3B82F6', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        style={{ background: 'var(--color-primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
                         <FaShare /> Copy Invite Link
                     </button>
@@ -509,7 +509,7 @@ const Room = () => {
                           </p>
                           <div className="flex justify-between items-center" style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
                             <span className="text-xs text-muted">By {note.uploadedByName}</span>
-                            <span className="badge badge-secondary" style={{ background: '#EFF6FF', color: '#2563EB' }}>{note.flashcards?.length || 0} Cards</span>
+                            <span className="badge badge-secondary" style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-primary)' }}>{note.flashcards?.length || 0} Cards</span>
                           </div>
                         </div>
                       ))}
