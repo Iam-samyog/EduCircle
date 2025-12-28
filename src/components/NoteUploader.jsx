@@ -3,6 +3,11 @@ import { saveNote } from '../services/notesService';
 import { getCurrentUser } from '../services/auth';
 import { FaUpload, FaFileAlt, FaCheckCircle, FaPen } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const NoteUploader = ({ roomId, onNoteUploaded }) => {
   const [uploading, setUploading] = useState(false);
@@ -39,24 +44,59 @@ const NoteUploader = ({ roomId, onNoteUploaded }) => {
     }
   };
 
+  const extractTextFromPDF = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    return fullText;
+  };
+
+  const extractTextFromDOCX = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
   const handleFile = async (file) => {
-    // Validate file type - only text files for simplicity
-    if (!file.type.startsWith('text/') && file.name.endsWith('.txt') === false) {
-      toast.error('Only text files (.txt) are supported for now');
+    const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+    const isDOCX = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx');
+    const isTXT = file.type.startsWith('text/') || file.name.endsWith('.txt');
+
+    if (!isPDF && !isDOCX && !isTXT) {
+      toast.error('Supported formats: .txt, .pdf, .docx');
       return;
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024;
+    // Validate file size (10MB max for PDF/DOCX)
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error('File size must be less than 5MB');
+      toast.error('File size must be less than 10MB');
       return;
     }
 
     setUploading(true);
 
     try {
-      const content = await file.text();
+      let content = '';
+      if (isPDF) {
+        content = await extractTextFromPDF(file);
+      } else if (isDOCX) {
+        content = await extractTextFromDOCX(file);
+      } else {
+        content = await file.text();
+      }
+
+      if (!content || !content.trim()) {
+        throw new Error('Could not extract text from file.');
+      }
       
       const noteData = await saveNote(
         roomId,
@@ -186,7 +226,7 @@ const NoteUploader = ({ roomId, onNoteUploaded }) => {
           <input
             id="file-input"
             type="file"
-            accept=".txt"
+            accept=".txt,.pdf,.docx"
             onChange={handleChange}
             style={{ display: 'none' }}
             disabled={uploading}
@@ -201,7 +241,7 @@ const NoteUploader = ({ roomId, onNoteUploaded }) => {
             <div>
               <FaUpload style={{ fontSize: '2.5rem', color: 'var(--color-primary)', marginBottom: '1rem' }} />
               <p className="font-semibold">Upload File</p>
-              <p className="text-sm text-muted">Drop .txt file or click</p>
+              <p className="text-sm text-muted">Drop .txt, .pdf, or .docx or click</p>
             </div>
           )}
         </div>

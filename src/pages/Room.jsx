@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getRoomById, joinRoom, subscribeToRoom, generateRoomLink, approveJoinRequest, rejectJoinRequest, deleteRoom } from '../services/roomService';
-import { getNotesByRoom, updateNoteContent, deleteNote, updateNoteFlashcards } from '../services/notesService';
+import { getNotesByRoom, updateNoteContent, deleteNote, updateNoteFlashcards as updateNoteFlashcardsService } from '../services/notesService';
+import { createDeck, subscribeToDecks, updateDeckFlashcards, deleteDeck, updateDeckTitle } from '../services/deckService';
 import { getCurrentUser, signOut } from '../services/auth';
-import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars, FaTrash, FaPlus, FaLayerGroup } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import ChatBox from '../components/ChatBox';
 import NoteUploader from '../components/NoteUploader';
 import Flashcards from '../components/Flashcards';
+import FlashcardCreator from '../components/FlashcardCreator';
 import StudyGoals from '../components/StudyGoals';
 import ShareModal from '../components/ShareModal';
 
@@ -19,22 +21,12 @@ const Room = () => {
   const [activeTab, setActiveTab] = useState('chat');
   const [loading, setLoading] = useState(true);
   
-  // Flashcards state
-  const [allFlashcards, setAllFlashcards] = useState([]);
-  const [currentFlashcards, setCurrentFlashcards] = useState([]);
-  const [flashcardFilterName, setFlashcardFilterName] = useState(null);
-  const [studyingNoteId, setStudyingNoteId] = useState(null);
-  
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [selectedNote, setSelectedNote] = useState(null);
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [editedContent, setEditedContent] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  // Flashcard creation state
-  const [showFlashcardForm, setShowFlashcardForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState('');
-  const [newAnswer, setNewAnswer] = useState('');
+  // Decks state
+  const [decks, setDecks] = useState([]);
+  const [selectedDeck, setSelectedDeck] = useState(null);
+  const [showDeckModal, setShowDeckModal] = useState(false);
+  const [newDeckTitle, setNewDeckTitle] = useState('');
+  const [showFlashcardCreator, setShowFlashcardCreator] = useState(false);
   
   const navigate = useNavigate();
   const user = getCurrentUser();
@@ -56,8 +48,19 @@ const Room = () => {
       }
     });
 
-    return () => unsubscribe();
-  }, [roomId, room]);
+    const unsubscribeDecks = subscribeToDecks(roomId, (updatedDecks) => {
+      setDecks(updatedDecks);
+      if (selectedDeck) {
+        const current = updatedDecks.find(d => d.id === selectedDeck.id);
+        if (current) setSelectedDeck(current);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeDecks();
+    };
+  }, [roomId, room, selectedDeck]);
 
   const updateUserRole = (roomData) => {
     if (roomData.participants?.includes(user.uid)) {
@@ -126,22 +129,15 @@ const Room = () => {
     setActiveTab('notes');
   };
 
-  const handleStudyFlashcards = (note) => {
-      if (note.flashcards && note.flashcards.length > 0) {
-          setCurrentFlashcards(note.flashcards);
-          setFlashcardFilterName(note.fileName);
-          setStudyingNoteId(note.id);
-          setActiveTab('flashcards');
-          setSelectedNote(null);
-      } else {
-          toast.error('No flashcards available for this note');
-      }
+  const handleStudyDeck = (deck) => {
+    setSelectedDeck(deck);
+    setActiveTab('flashcards');
+    setSelectedNote(null);
   };
-  
+
   const handleResetFlashcards = () => {
-    setCurrentFlashcards(allFlashcards);
-    setFlashcardFilterName(null);
-    setStudyingNoteId(null);
+    setSelectedDeck(null);
+    setShowFlashcardCreator(false);
   };
 
   const handleEditNote = () => {
@@ -179,26 +175,64 @@ const Room = () => {
   };
 
   const handleDeleteFlashcard = async (index) => {
-    if (!studyingNoteId) {
-        toast.error('Cannot delete from the general deck yet.');
-        return;
+    if (!selectedDeck) return;
+
+    if (selectedDeck.isNoteLegacy) {
+      toast.error('Cannot delete flashcards from a note-based deck. Extract them to a new deck first!');
+      return;
     }
 
     try {
-        const updatedFlashcards = currentFlashcards.filter((_, i) => i !== index);
-        await updateNoteFlashcards(studyingNoteId, updatedFlashcards);
-        setCurrentFlashcards(updatedFlashcards);
+        const updatedFlashcards = selectedDeck.flashcards.filter((_, i) => i !== index);
+        await updateDeckFlashcards(selectedDeck.id, updatedFlashcards);
         toast.success('Flashcard deleted');
-        
-        // Refresh notes to keep in sync
-        loadNotes();
-        
-        if (updatedFlashcards.length === 0) {
-            handleResetFlashcards();
-        }
     } catch (error) {
         console.error('Error deleting flashcard:', error);
         toast.error('Failed to delete flashcard');
+    }
+  };
+
+  const handleAddFlashcardToDeck = async (newCard) => {
+    if (!selectedDeck) return;
+    try {
+      const updatedFlashcards = [...(selectedDeck.flashcards || []), newCard];
+      await updateDeckFlashcards(selectedDeck.id, updatedFlashcards);
+    } catch (error) {
+      console.error('Error adding card:', error);
+      throw error;
+    }
+  };
+
+  const handleCreateDeck = async () => {
+    if (!newDeckTitle.trim()) {
+      toast.error('Please enter a deck title');
+      return;
+    }
+
+    try {
+      await createDeck(roomId, user.uid, user.displayName, newDeckTitle);
+      toast.success('Deck created!');
+      setNewDeckTitle('');
+      setShowDeckModal(false);
+    } catch (error) {
+      console.error('Error creating deck:', error);
+      toast.error('Failed to create deck');
+    }
+  };
+
+  const handleDeleteDeck = async (deckId, e) => {
+    if (e) e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this deck?')) {
+      try {
+        await deleteDeck(deckId);
+        toast.success('Deck deleted');
+        if (selectedDeck?.id === deckId) {
+          setSelectedDeck(null);
+        }
+      } catch (error) {
+        console.error('Error deleting deck:', error);
+        toast.error('Failed to delete deck');
+      }
     }
   };
 
@@ -580,26 +614,98 @@ const Room = () => {
 
             {activeTab === 'flashcards' && (
               <div>
-                 <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {flashcardFilterName && (
-                            <button onClick={handleResetFlashcards} className="btn-ghost" style={{ padding: '0.5rem', marginRight: '0.5rem' }}>
-                                <FaArrowLeft />
-                            </button>
-                        )}
-                        {flashcardFilterName ? `Flashcards: ${flashcardFilterName}` : 'Flashcards Deck'}
-                    </h2>
-                    {flashcardFilterName && (
-                        <button onClick={handleResetFlashcards} className="btn btn-secondary btn-sm">
-                            View All
+                 {!selectedDeck ? (
+                   <div>
+                     <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
+                       <h2>Flashcard Decks</h2>
+                       <button 
+                         onClick={() => setShowDeckModal(true)} 
+                         className="btn btn-primary"
+                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                       >
+                         <FaPlus /> Create Deck
+                       </button>
+                     </div>
+
+                     {decks.length === 0 ? (
+                       <div className="card" style={{ padding: '3rem', textAlign: 'center', background: 'white' }}>
+                         <FaLayerGroup style={{ fontSize: '3rem', color: '#E5E7EB', marginBottom: '1rem' }} />
+                         <p className="text-muted">No decks yet. Create one to start learning!</p>
+                       </div>
+                     ) : (
+                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                         {decks.map(deck => (
+                           <div 
+                             key={deck.id} 
+                             className="card card-hover" 
+                             onClick={() => handleStudyDeck(deck)}
+                             style={{ padding: '1.5rem', background: 'white', cursor: 'pointer', border: '1px solid #E5E7EB' }}
+                           >
+                             <div className="flex justify-between items-start" style={{ marginBottom: '1rem' }}>
+                               <FaLayerGroup style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }} />
+                               {(currentUserRole === 'admin' || deck.createdBy === user.uid) && (
+                                 <button 
+                                   onClick={(e) => handleDeleteDeck(deck.id, e)}
+                                   className="btn-ghost"
+                                   style={{ color: 'var(--color-error)', padding: '0.25rem' }}
+                                 >
+                                   <FaTrash />
+                                 </button>
+                               )}
+                             </div>
+                             <h4 style={{ marginBottom: '0.5rem', color: '#111827' }}>{deck.title}</h4>
+                             <div className="flex justify-between items-center" style={{ marginTop: '1rem', borderTop: '1px solid #F3F4F6', paddingTop: '1rem' }}>
+                               <span className="text-xs text-muted">By {deck.createdByName}</span>
+                               <span className="badge badge-secondary">{deck.flashcards?.length || 0} Cards</span>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 ) : (
+                   <div>
+                     <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <button onClick={handleResetFlashcards} className="btn-ghost" style={{ padding: '0.5rem' }}>
+                            <FaArrowLeft />
+                          </button>
+                          <div>
+                            <h2 style={{ margin: 0 }}>{selectedDeck.title}</h2>
+                            <p className="text-sm text-muted">{selectedDeck.flashcards?.length || 0} flashcards</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowFlashcardCreator(true)} 
+                          className="btn btn-secondary"
+                        >
+                          <FaPlus /> Add Card
                         </button>
-                    )}
-                 </div>
-                  <Flashcards 
-                    flashcards={currentFlashcards} 
-                    onDelete={handleDeleteFlashcard}
-                    isAdmin={currentUserRole === 'admin' || notes.find(n => n.id === studyingNoteId)?.uploadedBy === user?.uid}
-                  />
+                     </div>
+
+                     {showFlashcardCreator && (
+                       <FlashcardCreator 
+                         onAddFlashcard={handleAddFlashcardToDeck} 
+                         onCancel={() => setShowFlashcardCreator(false)} 
+                       />
+                     )}
+
+                     {selectedDeck.flashcards && selectedDeck.flashcards.length > 0 ? (
+                       <Flashcards 
+                         flashcards={selectedDeck.flashcards} 
+                         onDelete={handleDeleteFlashcard}
+                         isAdmin={currentUserRole === 'admin' || selectedDeck.createdBy === user.uid}
+                       />
+                     ) : (
+                       <div className="card" style={{ padding: '4rem', textAlign: 'center', background: 'white' }}>
+                         <p className="text-muted" style={{ marginBottom: '1.5rem' }}>This deck is empty.</p>
+                         <button onClick={() => setShowFlashcardCreator(true)} className="btn btn-primary">
+                           Add your first card
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                 )}
               </div>
             )}
 
@@ -618,6 +724,35 @@ const Room = () => {
         roomName={room.roomName}
       />
       
+      {/* Create Deck Modal */}
+      {showDeckModal && (
+        <div className="modal-overlay animate-fadeIn" onClick={() => setShowDeckModal(null)}>
+          <div className="modal animate-slideUp" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Create New Deck</h2>
+              <button className="modal-close" onClick={() => setShowDeckModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748B', marginBottom: '0.5rem' }}>Deck Title</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="e.g., Biology Midterm"
+                  value={newDeckTitle}
+                  onChange={(e) => setNewDeckTitle(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowDeckModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreateDeck}>Create Deck</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Note Summary Modal */}
       {selectedNote && (
           <div className="modal-overlay animate-fadeIn" onClick={() => setSelectedNote(null)}>
