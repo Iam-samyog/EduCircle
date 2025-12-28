@@ -27,6 +27,18 @@ const Room = () => {
   const [showDeckModal, setShowDeckModal] = useState(false);
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [showFlashcardCreator, setShowFlashcardCreator] = useState(false);
+
+  // Other state
+  const [allFlashcards, setAllFlashcards] = useState([]);
+  const [currentFlashcards, setCurrentFlashcards] = useState([]);
+  const [flashcardFilterName, setFlashcardFilterName] = useState(null);
+  const [studyingNoteId, setStudyingNoteId] = useState(null);
+
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const navigate = useNavigate();
   const user = getCurrentUser();

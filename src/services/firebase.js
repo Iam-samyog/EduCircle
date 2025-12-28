@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentSingleTabManager
+  persistentMultipleTabManager
 } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
@@ -29,7 +29,7 @@ export const auth = getAuth(app);
  */
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
-    tabManager: persistentSingleTabManager()
+    tabManager: persistentMultipleTabManager()
   })
 });
 
