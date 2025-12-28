@@ -6,6 +6,7 @@ import {
   getDocs,
   doc,
   updateDoc,
+  deleteDoc,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -162,6 +163,35 @@ export const updateNoteSummary = async (noteId, newSummary) => {
     });
   } catch (error) {
     console.error('Error updating summary:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a note from Firestore
+ */
+export const deleteNote = async (noteId) => {
+  try {
+    const noteRef = doc(db, 'notes', noteId);
+    await deleteDoc(noteRef);
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update flashcards for a note
+ */
+export const updateNoteFlashcards = async (noteId, flashcards) => {
+  try {
+    const noteRef = doc(db, 'notes', noteId);
+    await updateDoc(noteRef, {
+      flashcards,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error updating flashcards:', error);
     throw error;
   }
 };

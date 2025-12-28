@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { FaArrowLeft, FaArrowRight, FaRandom, FaRedo } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaRandom, FaRedo, FaTrash } from 'react-icons/fa';
 
-const Flashcards = ({ flashcards }) => {
+const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
@@ -53,6 +53,28 @@ const Flashcards = ({ flashcards }) => {
         }}
         onClick={() => setFlipped(!flipped)}
       >
+        {isAdmin && onDelete && (
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Delete this flashcard?')) {
+                        onDelete(currentIndex);
+                    }
+                }}
+                className="btn-ghost"
+                style={{ 
+                    position: 'absolute', 
+                    top: '1rem', 
+                    right: '1rem', 
+                    zIndex: 20, 
+                    color: 'var(--color-error)',
+                    padding: '0.5rem'
+                }}
+                title="Delete card"
+            >
+                <FaTrash />
+            </button>
+        )}
         <div
           style={{
             width: '100%',

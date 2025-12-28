@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getRoomById, joinRoom, subscribeToRoom, generateRoomLink, approveJoinRequest, rejectJoinRequest, deleteRoom } from '../services/roomService';
-import { getNotesByRoom, updateNoteSummary } from '../services/notesService';
+import { getNotesByRoom, updateNoteSummary, deleteNote, updateNoteFlashcards } from '../services/notesService';
 import { getCurrentUser, signOut } from '../services/auth';
 import { FaUsers, FaCopy, FaComments, FaStickyNote, FaTasks, FaGraduationCap, FaShare, FaFileAlt, FaHome, FaUser, FaSignOutAlt, FaUserPlus, FaCheck, FaTimes, FaLock, FaArrowLeft, FaBars, FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -23,6 +23,7 @@ const Room = () => {
   const [allFlashcards, setAllFlashcards] = useState([]);
   const [currentFlashcards, setCurrentFlashcards] = useState([]);
   const [flashcardFilterName, setFlashcardFilterName] = useState(null);
+  const [studyingNoteId, setStudyingNoteId] = useState(null);
   
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null); // For Summary Modal
@@ -124,6 +125,7 @@ const Room = () => {
       if (note.flashcards && note.flashcards.length > 0) {
           setCurrentFlashcards(note.flashcards);
           setFlashcardFilterName(note.fileName);
+          setStudyingNoteId(note.id);
           setActiveTab('flashcards');
           setSelectedNote(null);
       } else {
@@ -134,6 +136,7 @@ const Room = () => {
   const handleResetFlashcards = () => {
     setCurrentFlashcards(allFlashcards);
     setFlashcardFilterName(null);
+    setStudyingNoteId(null);
   };
 
   const handleEditNote = () => {
@@ -146,11 +149,51 @@ const Room = () => {
       await updateNoteSummary(selectedNote.id, editedSummary);
       toast.success('Summary updated!');
       setIsEditingNote(false);
-      // Update local state
       setSelectedNote({ ...selectedNote, summary: editedSummary });
-      setNotes(notes.map(n => n.id === selectedNote.id ? { ...n, summary: editedSummary } : n));
+      loadNotes();
     } catch (error) {
+      console.error('Error updating summary:', error);
       toast.error('Failed to update summary');
+    }
+  };
+  const handleDeleteNote = async (noteId, e) => {
+    if (e) e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      try {
+        await deleteNote(noteId);
+        toast.success('Note deleted successfully');
+        loadNotes();
+        if (selectedNote?.id === noteId) {
+          setSelectedNote(null);
+        }
+      } catch (error) {
+        console.error('Error deleting note:', error);
+        toast.error('Failed to delete note');
+      }
+    }
+  };
+
+  const handleDeleteFlashcard = async (index) => {
+    if (!studyingNoteId) {
+        toast.error('Cannot delete from the general deck yet.');
+        return;
+    }
+
+    try {
+        const updatedFlashcards = currentFlashcards.filter((_, i) => i !== index);
+        await updateNoteFlashcards(studyingNoteId, updatedFlashcards);
+        setCurrentFlashcards(updatedFlashcards);
+        toast.success('Flashcard deleted');
+        
+        // Refresh notes to keep in sync
+        loadNotes();
+        
+        if (updatedFlashcards.length === 0) {
+            handleResetFlashcards();
+        }
+    } catch (error) {
+        console.error('Error deleting flashcard:', error);
+        toast.error('Failed to delete flashcard');
     }
   };
 
@@ -491,8 +534,19 @@ const Room = () => {
                           }}
                         >
                           <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
-                            <FaFileAlt style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }} />
-                            <span className="text-xs text-muted" style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '4px' }}>PDF</span>
+                            <div className="flex items-center gap-sm">
+                                <FaFileAlt style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }} />
+                                <span className="text-xs text-muted" style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '4px' }}>PDF</span>
+                            </div>
+                            {(currentUserRole === 'admin' || note.uploadedBy === user?.uid) && (
+                                <button 
+                                    onClick={(e) => handleDeleteNote(note.id, e)}
+                                    className="btn-ghost" 
+                                    style={{ color: 'var(--color-error)', padding: '0.25rem' }}
+                                >
+                                    <FaTrash />
+                                </button>
+                            )}
                           </div>
                           <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#111827' }}>{note.fileName}</h4>
                           <p style={{ 
@@ -536,7 +590,11 @@ const Room = () => {
                         </button>
                     )}
                  </div>
-                 <Flashcards flashcards={currentFlashcards} />
+                  <Flashcards 
+                    flashcards={currentFlashcards} 
+                    onDelete={handleDeleteFlashcard}
+                    isAdmin={currentUserRole === 'admin' || notes.find(n => n.id === studyingNoteId)?.uploadedBy === user?.uid}
+                  />
               </div>
             )}
 
