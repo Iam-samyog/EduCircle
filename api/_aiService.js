@@ -19,19 +19,11 @@ import mammoth from 'mammoth';
 export const generateSummaryAndFlashcards = async (file, manualText) => {
   console.log('--- generateSummaryAndFlashcards Entry ---');
   
-  // Dynamic require for PDF to handle Vercel issues
+  // Robust PDF require
   let pdf;
   try {
     const pdf_parse = require('pdf-parse');
-    console.log('Require pdf-parse result type:', typeof pdf_parse);
-    if (typeof pdf_parse === 'function') {
-      pdf = pdf_parse;
-    } else if (pdf_parse && typeof pdf_parse.default === 'function') {
-      pdf = pdf_parse.default;
-    } else {
-      console.warn('pdf-parse is not a function, trying internal path...');
-      pdf = require('pdf-parse/lib/pdf-parse.js');
-    }
+    pdf = typeof pdf_parse === 'function' ? pdf_parse : (pdf_parse.default || pdf_parse);
   } catch (e) {
     console.error('PDF require error:', e.message);
   }
@@ -50,7 +42,8 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
       console.log('Processing file:', file.originalname, 'mime:', file.mimetype);
       if (file.mimetype === 'application/pdf') {
         if (typeof pdf !== 'function') {
-          throw new Error('PDF extraction is currently unavailable on the server. Please copy-paste the text instead.');
+          console.error('PDF library is not a function after require attempt');
+          throw new Error('PDF extraction is currently unavailable on the server. Please copy-paste the text instead or use a .docx file.');
         }
         const data = await pdf(file.buffer, {
           pagerender: () => "" // Skip rendering to avoid canvas/DOMMatrix issues
@@ -62,56 +55,63 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
       } else if (file.mimetype.startsWith('text/')) {
         text = file.buffer.toString('utf-8');
       } else {
-        throw new Error('Unsupported file type');
+        throw new Error('Unsupported file type. Please use PDF, DOCX, or TXT.');
       }
     }
 
     if (!text || text.trim().length < 50) {
-      throw new Error('The document content seems too short for AI analysis. Please provide more text.');
+      throw new Error('The document content is too short for analysis.');
     }
 
-    console.log('Extracted text length:', text.length);
+    // Try multiple model variations to avoid the 404 Not Found error
+    const modelNames = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    let lastError = null;
+    let result = null;
 
-    // Using gemini-1.5-flash which is standard. If it 404s, we'll try gemini-pro.
-    let model;
-    try {
-      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    } catch (e) {
-      console.warn('Failed to load gemini-1.5-flash, falling back to gemini-pro');
-      model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    }
+    for (const modelName of modelNames) {
+      try {
+        console.log(`Attempting AI analysis with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
+        const prompt = `
+          Analyze the following educational content and provide:
+          1. A concise summary (max 300 words) using LaTeX for all mathematical formulas, scientific notations, and technical terms where appropriate. Use standard LaTeX delimiters like $...$ for inline and $$...$$ for blocks.
+          2. 5-10 key points formatted in LaTeX.
+          3. 5-10 study flashcards in JSON format: [{"question": "...", "answer": "..."}].
 
-    const prompt = `
-      Analyze the following educational content and provide:
-      1. A concise summary (max 300 words) using LaTeX for all mathematical formulas, scientific notations, and technical terms where appropriate. Use standard LaTeX delimiters like $...$ for inline and $$...$$ for blocks.
-      2. 5-10 key points formatted in LaTeX.
-      3. 5-10 study flashcards in JSON format: [{"question": "...", "answer": "..."}].
+          Return ONLY a JSON object with this exact structure:
+          {
+            "summary": "...",
+            "keyPoints": ["...", "..."],
+            "flashcards": [{"question": "...", "answer": "..."}]
+          }
 
-      Return ONLY a JSON object with this exact structure:
-      {
-        "summary": "...",
-        "keyPoints": ["...", "..."],
-        "flashcards": [{"question": "...", "answer": "..."}]
+          Ensure all text inside the JSON strings is properly escaped for JSON compatibility, especially LaTeX backslashes.
+
+          Content:
+          ${text.substring(0, 15000)}
+        `;
+
+        const aiResult = await model.generateContent(prompt);
+        const response = await aiResult.response;
+        result = response.text();
+        console.log(`Success with model: ${modelName}`);
+        break; // Exit loop on success
+      } catch (e) {
+        console.error(`Failed with model ${modelName}:`, e.message);
+        lastError = e;
       }
+    }
 
-      Ensure all text inside the JSON strings is properly escaped for JSON compatibility, especially LaTeX backslashes.
+    if (!result) {
+      throw lastError || new Error('All AI models failed to process the content.');
+    }
 
-      Content:
-      ${text.substring(0, 15000)}
-    `;
-
-    console.log('Sending request to Gemini...');
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let jsonText = response.text();
-    console.log('Received response from Gemini');
-    
-    // Improved JSON extraction: Find the first '{' and last '}'
+    let jsonText = result;
     const firstBrace = jsonText.indexOf('{');
     const lastBrace = jsonText.lastIndexOf('}');
     
     if (firstBrace === -1 || lastBrace === -1) {
-      console.error('Raw AI Response:', jsonText);
       throw new Error('AI returned an unexpected format. Please try again.');
     }
     
@@ -120,11 +120,10 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
     try {
       return JSON.parse(jsonText);
     } catch (parseError) {
-      console.error('Failed to parse AI JSON:', jsonText);
-      throw new Error('AI returned data that couldn\'t be processed. Try a shorter segment of text.');
+      throw new Error('AI returned data that couldn\'t be parsed. Try a shorter segment of text.');
     }
   } catch (error) {
-    console.error('AI Service Error:', error);
+    console.error('Final AI Service Error:', error);
     throw error;
   }
 };
