@@ -40,8 +40,8 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
 
     const prompt = `
       Analyze the following educational content and provide:
-      1. A concise summary (max 300 words).
-      2. 5-10 key points.
+      1. A concise summary (max 300 words) using LaTeX for all mathematical formulas, scientific notations, and technical terms where appropriate. Use standard LaTeX delimiters like $...$ for inline and $$...$$ for blocks.
+      2. 5-10 key points formatted in LaTeX.
       3. 5-10 study flashcards in JSON format: [{"question": "...", "answer": "..."}].
 
       Return ONLY a JSON object with this exact structure:
@@ -50,6 +50,8 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
         "keyPoints": ["...", "..."],
         "flashcards": [{"question": "...", "answer": "..."}]
       }
+
+      Ensure all text inside the JSON strings is properly escaped for JSON compatibility, especially LaTeX backslashes.
 
       Content:
       ${text.substring(0, 10000)}

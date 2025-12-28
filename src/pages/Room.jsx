@@ -11,6 +11,9 @@ import NoteUploader from '../components/NoteUploader';
 import Flashcards from '../components/Flashcards';
 import StudyGoals from '../components/StudyGoals';
 import ShareModal from '../components/ShareModal';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 const Room = () => {
   const { roomId } = useParams();
@@ -619,7 +622,7 @@ const Room = () => {
             <div className="modal animate-slideUp" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <FaFileAlt style={{ color: '#2563EB', fontSize: '1.25rem' }} />
+                    <FaFileAlt style={{ color: 'var(--color-primary)', fontSize: '1.25rem' }} />
                     <h2 className="modal-title" style={{ fontSize: '1.25rem' }}>{selectedNote.fileName}</h2>
                 </div>
                 <button className="modal-close" onClick={() => setSelectedNote(null)}>×</button>
@@ -651,9 +654,14 @@ const Room = () => {
                       }}
                     />
                   ) : (
-                    <p style={{ lineHeight: '1.6', color: '#4B5563', whiteSpace: 'pre-wrap' }}>
-                        {selectedNote.summary || 'Processing summary...'}
-                    </p>
+                    <div style={{ lineHeight: '1.6', color: '#4B5563', whiteSpace: 'pre-wrap' }}>
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkMath]} 
+                          rehypePlugins={[rehypeKatex]}
+                        >
+                          {selectedNote.summary || 'Processing summary...'}
+                        </ReactMarkdown>
+                    </div>
                   )}
                   
                   {selectedNote.keyPoints && (
@@ -661,7 +669,11 @@ const Room = () => {
                          <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>Key Points</h4>
                          <ul style={{ paddingLeft: '1.25rem', color: '#4B5563' }}>
                              {selectedNote.keyPoints.map((point, i) => (
-                                 <li key={i} style={{ marginBottom: '0.25rem' }}>{point}</li>
+                                 <li key={i} style={{ marginBottom: '0.25rem' }}>
+                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                                        {point}
+                                    </ReactMarkdown>
+                                  </li>
                              ))}
                          </ul>
                      </div>
