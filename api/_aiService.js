@@ -12,11 +12,18 @@ if (typeof globalThis.Path2D === 'undefined') globalThis.Path2D = class {};
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdf = require('pdf-parse');
+const pdf_parse = require('pdf-parse');
+// Handle possible CJS/ESM interop issues
+const pdf = typeof pdf_parse === 'function' ? pdf_parse : pdf_parse.default;
+
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
 
 export const generateSummaryAndFlashcards = async (file, manualText) => {
+  if (file && file.mimetype === 'application/pdf' && typeof pdf !== 'function') {
+    console.error('pdf-parse resolve failed:', { type: typeof pdf_parse, hasDefault: !!pdf_parse.default });
+    throw new Error('PDF library failed to load correctly on the server.');
+  }
   
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
