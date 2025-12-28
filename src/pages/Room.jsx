@@ -62,17 +62,23 @@ const Room = () => {
 
     const unsubscribeDecks = subscribeToDecks(roomId, (updatedDecks) => {
       setDecks(updatedDecks);
-      if (selectedDeck) {
-        const current = updatedDecks.find(d => d.id === selectedDeck.id);
-        if (current) setSelectedDeck(current);
-      }
     });
 
     return () => {
       unsubscribe();
       unsubscribeDecks();
     };
-  }, [roomId, room, selectedDeck]);
+  }, [roomId, room]);
+
+  // Sync selectedDeck when decks list updates (e.g., card added in this or another tab)
+  useEffect(() => {
+    if (selectedDeck) {
+      const freshDeck = decks.find(d => d.id === selectedDeck.id);
+      if (freshDeck && JSON.stringify(freshDeck.flashcards) !== JSON.stringify(selectedDeck.flashcards)) {
+        setSelectedDeck(freshDeck);
+      }
+    }
+  }, [decks]);
 
   const updateUserRole = (roomData) => {
     if (roomData.participants?.includes(user.uid)) {

@@ -40,52 +40,29 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
     <div>
       {/* Flashcard */}
       <div
-        className="glass"
         style={{
-          minHeight: '300px',
-          padding: '2rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          perspective: '1000px',
-          marginBottom: '1.5rem'
+          width: '100%',
+          maxWidth: '600px',
+          margin: '0 auto 2rem',
+          perspective: '1500px',
+          height: '350px',
+          cursor: 'pointer'
         }}
         onClick={() => setFlipped(!flipped)}
       >
-        {isAdmin && onDelete && (
-            <button 
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm('Delete this flashcard?')) {
-                        onDelete(currentIndex);
-                    }
-                }}
-                className="btn-ghost"
-                style={{ 
-                    position: 'absolute', 
-                    top: '1rem', 
-                    right: '1rem', 
-                    zIndex: 20, 
-                    color: 'var(--color-error)',
-                    padding: '0.5rem'
-                }}
-                title="Delete card"
-            >
-                <FaTrash />
-            </button>
-        )}
         <div
           style={{
+            position: 'relative',
             width: '100%',
             height: '100%',
-            transition: 'transform 0.6s',
+            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
             transformStyle: 'preserve-3d',
             transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
           }}
         >
           {/* Front */}
           <div
+            className="card"
             style={{
               position: 'absolute',
               width: '100%',
@@ -95,22 +72,46 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '2rem'
+              padding: '2.5rem',
+              backgroundColor: 'white',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+              border: '1px solid var(--glass-border)'
             }}
           >
-            <p className="text-sm text-muted" style={{ marginBottom: '1rem' }}>
-              Question
-            </p>
-            <p className="text-xl text-center" style={{ fontWeight: 600 }}>
+            {isAdmin && onDelete && (
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Delete this flashcard?')) {
+                            onDelete(currentIndex);
+                        }
+                    }}
+                    className="btn-ghost"
+                    style={{ 
+                        position: 'absolute', 
+                        top: '1rem', 
+                        right: '1rem', 
+                        zIndex: 20, 
+                        color: 'var(--color-error)',
+                        padding: '0.5rem'
+                    }}
+                    title="Delete card"
+                >
+                    <FaTrash />
+                </button>
+            )}
+            <span className="badge badge-secondary" style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', opacity: 0.6 }}>Question</span>
+            <h3 className="text-center" style={{ margin: 0, fontSize: '1.5rem', color: 'var(--color-text-primary)' }}>
               {currentCard.question || currentCard.front || currentCard}
-            </p>
-            <p className="text-sm text-muted" style={{ marginTop: '2rem' }}>
-              Click to flip
-            </p>
+            </h3>
+            <div style={{ position: 'absolute', bottom: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="animate-pulse">Click to flip</span>
+            </div>
           </div>
-
+ 
           {/* Back */}
           <div
+            className="card"
             style={{
               position: 'absolute',
               width: '100%',
@@ -121,18 +122,21 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '2rem'
+              padding: '2.5rem',
+              backgroundColor: 'var(--color-bg-secondary)',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+              border: '1px solid var(--color-primary)'
             }}
           >
-            <p className="text-sm text-muted" style={{ marginBottom: '1rem' }}>
-              Answer
-            </p>
-            <p className="text-xl text-center" style={{ fontWeight: 600 }}>
-              {currentCard.answer || currentCard.back || 'No answer available'}
-            </p>
-            <p className="text-sm text-muted" style={{ marginTop: '2rem' }}>
+            <span className="badge badge-primary" style={{ position: 'absolute', top: '1.5rem', left: '1.5rem' }}>Answer</span>
+            <div style={{ width: '100%', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '1.25rem', color: 'var(--color-text-primary)', lineHeight: '1.6' }}>
+                {currentCard.answer || currentCard.back || 'No answer available'}
+              </p>
+            </div>
+            <div style={{ position: 'absolute', bottom: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
               Click to flip back
-            </p>
+            </div>
           </div>
         </div>
       </div>
