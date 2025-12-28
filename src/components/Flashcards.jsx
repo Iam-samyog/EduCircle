@@ -62,7 +62,6 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
         >
           {/* Front */}
           <div
-            className="card"
             style={{
               position: 'absolute',
               width: '100%',
@@ -74,6 +73,7 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
               justifyContent: 'center',
               padding: '2.5rem',
               backgroundColor: 'white',
+              borderRadius: 'var(--radius-lg)',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
               border: '1px solid var(--glass-border)'
             }}
@@ -111,7 +111,6 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
  
           {/* Back */}
           <div
-            className="card"
             style={{
               position: 'absolute',
               width: '100%',
@@ -124,6 +123,7 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
               justifyContent: 'center',
               padding: '2.5rem',
               backgroundColor: 'var(--color-bg-secondary)',
+              borderRadius: 'var(--radius-lg)',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
               border: '1px solid var(--color-primary)'
             }}

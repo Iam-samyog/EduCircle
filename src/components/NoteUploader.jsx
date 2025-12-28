@@ -8,7 +8,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 // Set up PDF.js worker
 // Set up PDF.js worker using a reliable CDN matched to the installed version
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// Set up PDF.js worker using unpkg for reliable version-specific hosting
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const NoteUploader = ({ roomId, onNoteUploaded }) => {
   const [uploading, setUploading] = useState(false);
