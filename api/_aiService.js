@@ -1,5 +1,15 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
+
+// Polyfill for Vercel/Serverless environments where DOMMatrix is missing
+if (typeof global.DOMMatrix === 'undefined') {
+  global.DOMMatrix = class DOMMatrix {
+    constructor() {
+      this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
+    }
+  };
+}
+
 const pdf = require('pdf-parse');
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
@@ -20,7 +30,9 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
 
     if (file) {
       if (file.mimetype === 'application/pdf') {
-        const data = await pdf(file.buffer);
+        const data = await pdf(file.buffer, {
+          pagerender: () => "" // Skip rendering to avoid canvas/DOMMatrix issues
+        });
         text = data.text;
       } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const data = await mammoth.extractRawText({ buffer: file.buffer });
