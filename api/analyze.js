@@ -13,6 +13,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('--- AI Analysis Start ---');
     const bb = busboy({ headers: req.headers });
     let fileBuffer = null;
     let fileName = '';
@@ -22,12 +23,14 @@ export default async function handler(req, res) {
     const bbPromise = new Promise((resolve, reject) => {
       bb.on('file', (name, file, info) => {
         const { filename, mimeType } = info;
+        console.log(`Receiving file: ${filename} (${mimeType})`);
         fileName = filename;
         fileMimeType = mimeType;
         const chunks = [];
         file.on('data', (chunk) => chunks.push(chunk));
         file.on('end', () => {
           fileBuffer = Buffer.concat(chunks);
+          console.log(`File received: ${fileBuffer.length} bytes`);
         });
       });
 
@@ -36,11 +39,15 @@ export default async function handler(req, res) {
       });
 
       bb.on('finish', () => resolve());
-      bb.on('error', (err) => reject(err));
+      bb.on('error', (err) => {
+        console.error('Busboy error:', err);
+        reject(err);
+      });
     });
 
     req.pipe(bb);
     await bbPromise;
+    console.log('Busboy parsing complete');
 
     const file = fileBuffer ? {
       buffer: fileBuffer,
@@ -49,16 +56,25 @@ export default async function handler(req, res) {
     } : null;
 
     if (!file && !manualText) {
+      console.warn('No content provided');
       return res.status(400).json({ error: 'No file or text provided' });
     }
 
+    console.log('Calling generateSummaryAndFlashcards...');
     const result = await generateSummaryAndFlashcards(file, manualText);
+    console.log('AI Analysis Success');
     res.status(200).json(result);
   } catch (error) {
-    console.error('AI Analysis Error:', error);
+    console.error('--- AI Analysis CRITICAL FAILURE ---');
+    console.error('Error Object:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({ 
       error: 'AI Analysis Failed', 
-      message: error.message 
+      message: error.message,
+      detail: 'See server logs for stack trace'
     });
   }
 }
