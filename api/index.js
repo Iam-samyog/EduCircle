@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import { generateSummaryAndFlashcards } from './_aiService.js';
 
 const app = express();
 
@@ -25,6 +24,7 @@ app.get('/api/health', (req, res) => {
 
 app.post('/api/ai/analyze', upload.single('file'), async (req, res) => {
   try {
+    const { generateSummaryAndFlashcards } = await import('./_aiService.js');
     const file = req.file;
     const { text: manualText } = req.body;
 
