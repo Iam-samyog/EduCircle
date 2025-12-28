@@ -19,20 +19,35 @@ import mammoth from 'mammoth';
 export const generateSummaryAndFlashcards = async (file, manualText) => {
   console.log('--- generateSummaryAndFlashcards Entry ---');
   
-  // Robust PDF require
+  // Robust PDF require - explicitly checking all possible export shapes
   let pdf;
   try {
     const pdf_parse = require('pdf-parse');
-    pdf = typeof pdf_parse === 'function' ? pdf_parse : (pdf_parse.default || pdf_parse);
+    console.log('PDF module type:', typeof pdf_parse);
+    
+    if (typeof pdf_parse === 'function') {
+      pdf = pdf_parse;
+    } else if (pdf_parse && typeof pdf_parse.default === 'function') {
+      pdf = pdf_parse.default;
+    } else if (pdf_parse && typeof pdf_parse.pdf === 'function') {
+      pdf = pdf_parse.pdf;
+    } else if (typeof pdf_parse === 'object' && pdf_parse !== null) {
+      // Sometimes it's a nested object in certain build environments
+      const keys = Object.keys(pdf_parse);
+      console.log('PDF module keys:', keys);
+      const funcKey = keys.find(k => typeof pdf_parse[k] === 'function');
+      if (funcKey) pdf = pdf_parse[funcKey];
+    }
   } catch (e) {
-    console.error('PDF require error:', e.message);
+    console.error('PDF library require failed:', e.message);
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment variables.');
   }
-  
+
+  // FORCE v1 API version to avoid the 404 on v1beta
   const genAI = new GoogleGenerativeAI(apiKey);
   
   try {
@@ -63,8 +78,8 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
       throw new Error('The document content is too short for analysis.');
     }
 
-    // Try multiple model variations to avoid the 404 Not Found error
-    const modelNames = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    // List of reliable models. We prioritize 1.5-flash as it is fastest and most available.
+    const modelNames = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
     let lastError = null;
     let result = null;
 
