@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmail, signInWithGoogle } from '../services/auth';
+import { useAuth } from '../context/AuthContext';
 import { FaGoogle, FaEnvelope, FaLock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import '../styles/components.css';
@@ -10,6 +11,13 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();

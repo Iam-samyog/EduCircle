@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 import { FaRocket, FaBrain, FaUsers, FaFileAlt, FaQuoteLeft, FaStar, FaGithub, FaTwitter, FaLinkedin, FaEnvelope, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const Home = () => {
   const [currentReview, setCurrentReview] = useState(0);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   const reviews = [
     {

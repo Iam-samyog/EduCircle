@@ -7,12 +7,14 @@ import Dashboard from './pages/Dashboard';
 import Room from './pages/Room';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 import './styles/index.css';
 import './styles/components.css';
 
 function App() {
   return (
-    <Router>
+    <AuthProvider>
+      <Router>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -69,6 +71,7 @@ function App() {
         />
       </Routes>
     </Router>
+    </AuthProvider>
   );
 }
 

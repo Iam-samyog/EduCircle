@@ -12,17 +12,35 @@ if (typeof globalThis.Path2D === 'undefined') globalThis.Path2D = class {};
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdf_parse = require('pdf-parse');
-// Handle possible CJS/ESM interop issues
-const pdf = typeof pdf_parse === 'function' ? pdf_parse : pdf_parse.default;
+
+let pdf;
+try {
+  const pdf_parse = require('pdf-parse');
+  // Handle various export patterns (CJS, ESM, etc)
+  if (typeof pdf_parse === 'function') {
+    pdf = pdf_parse;
+  } else if (pdf_parse && typeof pdf_parse.default === 'function') {
+    pdf = pdf_parse.default;
+  } else if (pdf_parse && typeof pdf_parse.pdf === 'function') {
+    pdf = pdf_parse.pdf;
+  } else {
+    // Try to require the internal lib directly if the main export is weird
+    try {
+      pdf = require('pdf-parse/lib/pdf-parse.js');
+    } catch (e2) {
+      console.error('Failed to require internal pdf-parse:', e2);
+    }
+  }
+} catch (e) {
+  console.error('Initial pdf-parse require failed:', e);
+}
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
 
 export const generateSummaryAndFlashcards = async (file, manualText) => {
   if (file && file.mimetype === 'application/pdf' && typeof pdf !== 'function') {
-    console.error('pdf-parse resolve failed:', { type: typeof pdf_parse, hasDefault: !!pdf_parse.default });
-    throw new Error('PDF library failed to load correctly on the server.');
+    throw new Error('PDF library failed to load correctly. Please try a different file format like .txt or .docx.');
   }
   
   const apiKey = process.env.GEMINI_API_KEY;
