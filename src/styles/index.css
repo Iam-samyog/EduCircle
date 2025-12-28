@@ -1,35 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
 
 :root {
-  /* Color Palette - Clean Professional Blue & White */
-  --color-primary: #2563EB;       /* Royal Blue */
-  --color-primary-dark: #1D4ED8;
-  --color-primary-light: #60A5FA;
+  /* Color Palette - Clean Professional Black & White */
+  --color-primary: #000000;       /* Pure Black */
+  --color-primary-dark: #171717;  /* Darker Black (Neutral-900) */
+  --color-primary-light: #404040; /* Dark Gray (Neutral-700) */
   
-  --color-secondary: #4B5563;     /* Cool Gray */
+  --color-secondary: #525252;     /* Neutral Gray */
   
-  --color-accent: #3B82F6;
+  --color-accent: #262626;        /* Neutral-800 */
   --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-error: #EF4444;
   
   /* Backgrounds */
   --color-bg-primary: #FFFFFF;    /* Pure White */
-  --color-bg-secondary: #F8FAFC;  /* Very light gray/blue tint */
-  --color-bg-tertiary: #F1F5F9;   /* Inputs/Cards */
+  --color-bg-secondary: #FAFAFA;  /* Very light gray */
+  --color-bg-tertiary: #F5F5F5;   /* Neutral-100 */
   
   /* Surfaces */
   --color-surface: #FFFFFF;
-  --color-surface-hover: #F8FAFC;
+  --color-surface-hover: #F5F5F5;
   
   /* Text */
-  --color-text-primary: #111827;   /* Almost Black */
-  --color-text-secondary: #4B5563; /* Dark Gray */
-  --color-text-muted: #9CA3AF;     /* Muted Gray */
+  --color-text-primary: #0A0A0A;   /* Almost Black */
+  --color-text-secondary: #525252; /* Neutral Gray */
+  --color-text-muted: #737373;     /* Neutral-500 */
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-  --gradient-secondary: linear-gradient(135deg, #4B5563 0%, #1F2937 100%);
+  --gradient-primary: linear-gradient(135deg, #000000 0%, #171717 100%);
+  --gradient-secondary: linear-gradient(135deg, #525252 0%, #262626 100%);
   --gradient-bg: #FFFFFF;
   
   /* Modern Glass/Card styles */
@@ -110,8 +110,8 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-md);
 }
 
-h1 { font-size: 3rem; color: #1e3a8a; } /* Dark Blue for Headers */
-h2 { font-size: 2.25rem; color: #1e40af; }
+h1 { font-size: 3rem; color: var(--color-primary-dark); }
+h2 { font-size: 2.25rem; color: var(--color-primary); }
 h3 { font-size: 1.75rem; }
 h4 { font-size: 1.5rem; }
 h5 { font-size: 1.25rem; }
@@ -438,7 +438,7 @@ a:hover {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 50%;
-  background: #2563EB;
+  background: var(--color-primary);
   color: white;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
   border: none;
@@ -453,8 +453,8 @@ a:hover {
 
 .hamburger-btn:hover {
   transform: scale(1.05);
-  background: #1D4ED8;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+  background: var(--color-primary-dark);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
 .hamburger-btn:active {

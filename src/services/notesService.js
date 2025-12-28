@@ -32,58 +32,44 @@ export const extractTextFromFile = async (file) => {
 };
 
 /**
- * Summarize note using AI backend
- * Now supports File objects (PDF, DOCX, TXT)
+ * Analyze note using unified AI backend
  */
-export const summarizeNote = async (input) => {
+export const analyzeContent = async (input) => {
   try {
-    let response;
-    
+    const formData = new FormData();
     if (input instanceof File) {
-      const formData = new FormData();
       formData.append('file', input);
-      response = await axios.post(`${AI_BACKEND_URL}/api/summarize`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      return { summary: response.data.summary, extractedText: response.data.extractedText };
     } else {
-      // Legacy text support
-      response = await axios.post(`${AI_BACKEND_URL}/api/summarize`, { text: input });
-      return { summary: response.data.summary, extractedText: input };
+      formData.append('text', input);
     }
+
+    const response = await axios.post(`${AI_BACKEND_URL}/api/ai/analyze`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    return response.data;
   } catch (error) {
-    console.error('Error summarizing note:', error);
+    console.error('AI Analysis Error:', error);
     throw error;
   }
 };
 
 /**
+ * Summarize note using AI backend
+ */
+export const summarizeNote = async (input) => {
+  const data = await analyzeContent(input);
+  return { summary: data.summary, extractedText: data.summary }; // Backend doesn't return raw text yet, using summary as placeholder or we can update backend
+};
+
+/**
  * Generate flashcards using AI backend
- * Now supports File objects (PDF, DOCX, TXT)
  */
 export const generateFlashcards = async (input) => {
-  try {
-    let response;
-    
-    if (input instanceof File) {
-      const formData = new FormData();
-      formData.append('file', input);
-      response = await axios.post(`${AI_BACKEND_URL}/api/generate-flashcards`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-    } else {
-      response = await axios.post(`${AI_BACKEND_URL}/api/generate-flashcards`, { text: input });
-    }
-    
-    return response.data.flashcards;
-  } catch (error) {
-    console.error('Error generating flashcards:', error);
-    throw error;
-  }
+  const data = await analyzeContent(input);
+  return data.flashcards;
 };
 
 /**
@@ -142,20 +128,17 @@ export const getNotesByRoom = async (roomId) => {
  */
 export const processNote = async (roomId, userId, userName, file) => {
   try {
-    // Send file to backend for processing (extraction + AI)
-    // Run in parallel for speed
-    const [summaryResult, flashcards] = await Promise.all([
-      summarizeNote(file),
-      generateFlashcards(file)
-    ]);
+    // Single AI call for both summary and flashcards
+    const data = await analyzeContent(file);
     
-    const { summary, extractedText } = summaryResult;
+    const { summary, flashcards, keyPoints } = data;
     
     // Save to Firestore
     const noteData = await saveNoteData(roomId, userId, userName, {
-      originalText: extractedText || "Text extracted from file",
+      originalText: "Extracted from " + file.name,
       summary,
       flashcards,
+      keyPoints, // Adding keypoints support too
       fileName: file.name
     });
     

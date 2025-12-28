@@ -215,7 +215,7 @@ const Room = () => {
         padding: '3rem 2rem',
         display: 'flex',
         flexDirection: 'column',
-        background: 'linear-gradient(180deg, #1E40AF 0%, #1E3A8A 100%)',
+        background: 'black',
         color: 'white',
         height: '100vh',
         position: 'fixed',
@@ -491,8 +491,8 @@ const Room = () => {
                           }}
                         >
                           <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
-                            <FaFileAlt style={{ fontSize: '1.5rem', color: '#2563EB' }} />
-                            <span className="text-xs text-muted" style={{ background: '#EFF6FF', color: '#1E40AF', padding: '2px 8px', borderRadius: '4px' }}>PDF</span>
+                            <FaFileAlt style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }} />
+                            <span className="text-xs text-muted" style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '4px' }}>PDF</span>
                           </div>
                           <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#111827' }}>{note.fileName}</h4>
                           <p style={{ 

@@ -29,7 +29,7 @@ const Navbar = () => {
       top: 0, 
       zIndex: 1000,
       padding: '0.75rem 0',
-      background: 'linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)',
+      background: 'black',
       color: 'white',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
     }}>
@@ -69,7 +69,7 @@ const Navbar = () => {
               <Link to="/login" className="btn btn-sm" style={{ background: 'transparent', color: 'white', border: 'none', fontWeight: 500 }}>
                 Login
               </Link>
-              <Link to="/signup" className="btn btn-sm" style={{ background: 'white', color: '#2563EB', border: 'none', fontWeight: 600 }}>
+              <Link to="/signup" className="btn btn-sm" style={{ background: 'white', color: 'black', border: 'none', fontWeight: 600 }}>
                 Get Started
               </Link>
             </>
@@ -117,7 +117,7 @@ const Navbar = () => {
           right: isMobileMenuOpen ? 0 : '-280px', 
           width: '280px', 
           height: 'calc(100vh - 64px)', 
-          background: '#1E3A8A', 
+          background: 'black', 
           zIndex: 1000, 
           transition: 'right 0.3s ease',
           padding: '2rem 1.5rem',
