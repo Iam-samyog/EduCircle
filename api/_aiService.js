@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
 
 export const generateSummaryAndFlashcards = async (file, manualText) => {
@@ -6,11 +5,18 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
   
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment variables.');
+    throw new Error('Gemini API Key is missing.');
+  }
+
+  // Dynamic import for better compatibility in serverless
+  const aiPkg = await import('@google/generative-ai');
+  const GoogleGenerativeAI = aiPkg.GoogleGenerativeAI || aiPkg.default?.GoogleGenerativeAI || aiPkg.default;
+  
+  if (typeof GoogleGenerativeAI !== 'function') {
+    throw new Error('AI Library failed to initialize. Please contact support.');
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Gemini 1.5 Flash is highly optimized for multimodal (PDF, Text, images)
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   try {
