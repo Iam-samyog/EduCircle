@@ -63,9 +63,14 @@ export const getNotesByRoom = async (roomId) => {
 /**
  * Update note content
  */
-export const updateNoteContent = async (noteId, newContent) => {
+export const updateNoteContent = async (noteId, userId, newContent) => {
   try {
     const noteRef = doc(db, 'notes', noteId);
+    const noteDoc = await getDoc(noteRef);
+    
+    if (!noteDoc.exists()) throw new Error('Note not found');
+    if (noteDoc.data().uploadedBy !== userId) throw new Error('Permission denied');
+
     await updateDoc(noteRef, {
       content: newContent,
       updatedAt: serverTimestamp()
@@ -79,9 +84,14 @@ export const updateNoteContent = async (noteId, newContent) => {
 /**
  * Delete a note from Firestore
  */
-export const deleteNote = async (noteId) => {
+export const deleteNote = async (noteId, userId) => {
   try {
     const noteRef = doc(db, 'notes', noteId);
+    const noteDoc = await getDoc(noteRef);
+    
+    if (!noteDoc.exists()) return;
+    if (noteDoc.data().uploadedBy !== userId) throw new Error('Permission denied');
+
     await deleteDoc(noteRef);
   } catch (error) {
     console.error('Error deleting note:', error);
@@ -92,9 +102,14 @@ export const deleteNote = async (noteId) => {
 /**
  * Update flashcards for a note
  */
-export const updateNoteFlashcards = async (noteId, flashcards) => {
+export const updateNoteFlashcards = async (noteId, userId, flashcards) => {
   try {
     const noteRef = doc(db, 'notes', noteId);
+    const noteDoc = await getDoc(noteRef);
+    
+    if (!noteDoc.exists()) throw new Error('Note not found');
+    if (noteDoc.data().uploadedBy !== userId) throw new Error('Permission denied');
+
     await updateDoc(noteRef, {
       flashcards,
       updatedAt: serverTimestamp()
@@ -108,17 +123,14 @@ export const updateNoteFlashcards = async (noteId, flashcards) => {
 /**
  * Add a single flashcard to a note
  */
-export const addFlashcardToNote = async (noteId, flashcard) => {
+export const addFlashcardToNote = async (noteId, userId, flashcard) => {
   try {
     const noteRef = doc(db, 'notes', noteId);
-    const notesQuery = query(collection(db, 'notes'), where('__name__', '==', noteId));
-    const snapshot = await getDocs(notesQuery);
+    const noteDoc = await getDoc(noteRef);
     
-    if (snapshot.empty) {
-      throw new Error('Note not found');
-    }
+    if (!noteDoc.exists()) throw new Error('Note not found');
+    if (noteDoc.data().uploadedBy !== userId) throw new Error('Permission denied');
 
-    const noteDoc = snapshot.docs[0];
     const currentFlashcards = noteDoc.data().flashcards || [];
     
     await updateDoc(noteRef, {

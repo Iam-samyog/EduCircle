@@ -69,21 +69,36 @@ export const subscribeToMessages = (roomId, callback) => {
  */
 export const getMessageHistory = async (roomId, messageLimit = 50) => {
   try {
-    const messagesQuery = query(
-      collection(db, 'messages'),
-      where('roomId', '==', roomId),
-      orderBy('timestamp', 'desc'),
-      limit(messageLimit)
-    );
+    const messagesRef = collection(db, 'messages');
     
-    const snapshot = await getDocs(messagesQuery);
-    const messages = [];
-    
-    snapshot.forEach((doc) => {
-      messages.push({ id: doc.id, ...doc.data() });
-    });
-    
-    return messages.reverse(); // Return in chronological order
+    try {
+      const historyQuery = query(
+        messagesRef,
+        where('roomId', '==', roomId),
+        orderBy('timestamp', 'desc'),
+        limit(messageLimit)
+      );
+      const snapshot = await getDocs(historyQuery);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).reverse();
+    } catch (indexError) {
+      console.warn('Chat history index missing, falling back');
+      const simpleQuery = query(
+        messagesRef,
+        where('roomId', '==', roomId),
+        limit(messageLimit)
+      );
+      const snapshot = await getDocs(simpleQuery);
+      const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Client-side sort
+      messages.sort((a, b) => {
+        const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : (a.timestamp?.seconds ? a.timestamp.seconds * 1000 : 0);
+        const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : (b.timestamp?.seconds ? b.timestamp.seconds * 1000 : 0);
+        return timeA - timeB;
+      });
+      
+      return messages;
+    }
   } catch (error) {
     console.error('Error getting message history:', error);
     throw error;

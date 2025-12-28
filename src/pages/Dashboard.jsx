@@ -6,6 +6,7 @@ import { FaPlus, FaUsers, FaCopy, FaArrowRight, FaGlobe, FaLock, FaSearch, FaTra
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import ShareModal from '../components/ShareModal';
+import ConfirmModal from '../components/ConfirmModal';
 import { format } from 'date-fns';
 
 const Dashboard = () => {
@@ -20,6 +21,15 @@ const Dashboard = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const navigate = useNavigate();
   const user = getCurrentUser();
+
+  // Confirmation Modal state
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    confirmText: 'Delete'
+  });
 
   useEffect(() => {
     loadRooms();
@@ -62,17 +72,25 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteRoom = async (roomId) => {
-    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-      try {
-        await deleteRoom(roomId);
-        toast.success('Room deleted successfully');
-        loadData(); // Reload rooms
-      } catch (error) {
-        console.error('Error deleting room:', error);
-        toast.error('Failed to delete room');
+  const handleDeleteRoom = (roomId) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Room?",
+      message: "Are you sure you want to delete this room? This action cannot be undone.",
+      confirmText: "Delete Room",
+      onConfirm: async () => {
+        try {
+          await deleteRoom(roomId, user.uid);
+          toast.success('Room deleted successfully');
+          loadRooms(); // Fixed: was loadData(), but should be loadRooms()
+        } catch (error) {
+          console.error('Error deleting room:', error);
+          toast.error('Failed to delete room');
+        } finally {
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        }
       }
-    }
+    });
   };
 
   const handleJoinRequest = async (roomId, roomName) => {
@@ -360,6 +378,15 @@ const Dashboard = () => {
         onClose={() => setShowShareModal(false)}
         roomId={selectedRoom?.roomId}
         roomName={selectedRoom?.roomName}
+      />
+
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
       />
 
       <style>{`

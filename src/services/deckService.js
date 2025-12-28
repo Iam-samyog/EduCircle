@@ -23,7 +23,7 @@ export const createDeck = async (roomId, userId, userName, title) => {
     const data = {
       roomId,
       createdBy: userId,
-      createdByName: userName,
+      createdByName: userName || 'Anonymous',
       title: title || 'Untitled Deck',
       flashcards: [],
       createdAt: serverTimestamp(),
@@ -45,8 +45,7 @@ export const getDecksByRoom = async (roomId) => {
   try {
     const decksQuery = query(
       collection(db, 'decks'),
-      where('roomId', '==', roomId),
-      orderBy('createdAt', 'desc')
+      where('roomId', '==', roomId)
     );
     
     const snapshot = await getDocs(decksQuery);
@@ -56,7 +55,12 @@ export const getDecksByRoom = async (roomId) => {
       decks.push({ id: doc.id, ...doc.data() });
     });
     
-    return decks;
+    // Client-side sort: handle pending timestamps
+    return decks.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Date.now());
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Date.now());
+      return timeB - timeA;
+    });
   } catch (error) {
     console.error('Error getting decks:', error);
     throw error;
@@ -67,29 +71,45 @@ export const getDecksByRoom = async (roomId) => {
  * Subscribe to decks in a room
  */
 export const subscribeToDecks = (roomId, callback) => {
-  const decksQuery = query(
-    collection(db, 'decks'),
-    where('roomId', '==', roomId),
-    orderBy('createdAt', 'desc')
+  const decksRef = collection(db, 'decks');
+  
+  // Stable query without orderBy to bypass index requirements and SDK bugs
+  const simpleQuery = query(
+    decksRef,
+    where('roomId', '==', roomId)
   );
 
-  return onSnapshot(decksQuery, (snapshot) => {
+  return onSnapshot(simpleQuery, (snapshot) => {
     const decks = [];
     snapshot.forEach((doc) => {
       decks.push({ id: doc.id, ...doc.data() });
     });
+    
+    // Sort on client side: handle pending timestamps by treating missing/pending as now
+    decks.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Date.now());
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Date.now());
+      return timeB - timeA;
+    });
+    
     callback(decks);
   }, (error) => {
-    console.error('Error subscribing to decks:', error);
+    console.error('Subscription error:', error);
+    toast.error('Sync failed. Please check your connection.');
   });
 };
 
 /**
  * Update deck title
  */
-export const updateDeckTitle = async (deckId, newTitle) => {
+export const updateDeckTitle = async (deckId, userId, newTitle) => {
   try {
     const deckRef = doc(db, 'decks', deckId);
+    const deckDoc = await getDoc(deckRef);
+    
+    if (!deckDoc.exists()) throw new Error('Deck not found');
+    if (deckDoc.data().createdBy !== userId) throw new Error('Permission denied');
+
     await updateDoc(deckRef, {
       title: newTitle,
       updatedAt: serverTimestamp()
@@ -103,9 +123,14 @@ export const updateDeckTitle = async (deckId, newTitle) => {
 /**
  * Delete a deck
  */
-export const deleteDeck = async (deckId) => {
+export const deleteDeck = async (deckId, userId) => {
   try {
     const deckRef = doc(db, 'decks', deckId);
+    const deckDoc = await getDoc(deckRef);
+    
+    if (!deckDoc.exists()) return;
+    if (deckDoc.data().createdBy !== userId) throw new Error('Permission denied');
+
     await deleteDoc(deckRef);
   } catch (error) {
     console.error('Error deleting deck:', error);
@@ -116,9 +141,14 @@ export const deleteDeck = async (deckId) => {
 /**
  * Update flashcards for a deck
  */
-export const updateDeckFlashcards = async (deckId, flashcards) => {
+export const updateDeckFlashcards = async (deckId, userId, flashcards) => {
   try {
     const deckRef = doc(db, 'decks', deckId);
+    const deckDoc = await getDoc(deckRef);
+    
+    if (!deckDoc.exists()) throw new Error('Deck not found');
+    if (deckDoc.data().createdBy !== userId) throw new Error('Permission denied');
+
     await updateDoc(deckRef, {
       flashcards,
       updatedAt: serverTimestamp()
@@ -132,17 +162,15 @@ export const updateDeckFlashcards = async (deckId, flashcards) => {
 /**
  * Add a single flashcard to a deck
  */
-export const addFlashcardToDeck = async (deckId, flashcard) => {
+export const addFlashcardToDeck = async (deckId, userId, flashcard) => {
   try {
     const deckRef = doc(db, 'decks', deckId);
-    const deckSnapshot = await getDocs(query(collection(db, 'decks'), where('__name__', '==', deckId)));
+    const deckDoc = await getDoc(deckRef);
     
-    if (deckSnapshot.empty) {
-      throw new Error('Deck not found');
-    }
+    if (!deckDoc.exists()) throw new Error('Deck not found');
+    if (deckDoc.data().createdBy !== userId) throw new Error('Permission denied');
 
-    const deckData = deckSnapshot.docs[0].data();
-    const currentFlashcards = deckData.flashcards || [];
+    const currentFlashcards = deckDoc.data().flashcards || [];
     
     await updateDoc(deckRef, {
       flashcards: [...currentFlashcards, flashcard],

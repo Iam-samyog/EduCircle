@@ -138,11 +138,7 @@ const Home = () => {
             animate="visible"
             variants={containerVariants}
           >
-            <motion.div variants={itemVariants}>
-              <span className="badge badge-primary" style={{ marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--color-primary)', border: '1px solid rgba(37, 99, 235, 0.2)', padding: '0.5rem 1rem' }}>
-                <FaRocket style={{ marginRight: '0.5rem' }} /> v1.0 Now Live
-              </span>
-            </motion.div>
+          
 
             <motion.h1 
               variants={itemVariants}

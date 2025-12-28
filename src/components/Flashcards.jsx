@@ -82,9 +82,7 @@ const Flashcards = ({ flashcards, onDelete, isAdmin }) => {
                 <button 
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm('Delete this flashcard?')) {
-                            onDelete(currentIndex);
-                        }
+                        onDelete(currentIndex);
                     }}
                     className="btn-ghost"
                     style={{ 

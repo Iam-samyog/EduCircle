@@ -3,11 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signOut, getCurrentUser } from '../services/auth';
 import { FaHome, FaUser, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import ConfirmModal from './ConfirmModal';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const user = getCurrentUser();
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -16,6 +19,8 @@ const Navbar = () => {
       navigate('/login');
     } catch (error) {
       toast.error('Failed to sign out');
+    } finally {
+      setIsConfirmOpen(false);
     }
   };
 
@@ -49,7 +54,7 @@ const Navbar = () => {
                 Dashboard
               </Link>
 
-              <button onClick={handleSignOut} className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }}>
+              <button onClick={() => setIsConfirmOpen(true)} className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }}>
                 <FaSignOutAlt />
                 Sign Out
               </button>
@@ -148,7 +153,7 @@ const Navbar = () => {
               <FaHome /> Dashboard
             </Link>
 
-            <button onClick={() => { handleSignOut(); toggleMobileMenu(); }} className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}>
+            <button onClick={() => { setIsConfirmOpen(true); setIsMobileMenuOpen(false); }} className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}>
               <FaSignOutAlt /> Sign Out
             </button>
           </>
@@ -159,6 +164,16 @@ const Navbar = () => {
           </>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleSignOut}
+        title="Sign Out?"
+        message="Are you sure you want to sign out of your account?"
+        confirmText="Sign Out"
+        type="warning"
+      />
 
       <style>{`
         @media (max-width: 768px) {

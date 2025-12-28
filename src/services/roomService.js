@@ -174,9 +174,14 @@ export const subscribeToRoom = (roomId, callback) => {
 /**
  * Update room details
  */
-export const updateRoom = async (roomId, updates) => {
+export const updateRoom = async (roomId, userId, updates) => {
   try {
     const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) throw new Error('Room not found');
+    if (roomDoc.data().createdBy !== userId) throw new Error('Permission denied');
+
     await updateDoc(roomRef, updates);
   } catch (error) {
     console.error('Error updating room:', error);
@@ -189,21 +194,33 @@ export const updateRoom = async (roomId, updates) => {
  */
 export const getPublicRooms = async () => {
   try {
-    const roomsQuery = query(
-      collection(db, 'rooms'),
-      limit(50)
-    );
+    const roomsRef = collection(db, 'rooms');
     
-    // Fetch all recent rooms to ensure we see them, even if 'isPublic' is missing.
-    // We filter client-side.
-    const querySnapshot = await getDocs(roomsQuery);
-    const rooms = [];
-    
-    querySnapshot.forEach((doc) => {
-      rooms.push({ roomId: doc.id, ...doc.data() });
-    });
-    
-    return rooms;
+    // Attempt filtered and ordered query
+    try {
+      const publicQuery = query(
+        roomsRef,
+        where('isPublic', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+      const snapshot = await getDocs(publicQuery);
+      return snapshot.docs.map(doc => ({ roomId: doc.id, ...doc.data() }));
+    } catch (indexError) {
+      console.warn('Public rooms index missing, falling back to client-side filter');
+      const allQuery = query(roomsRef, limit(50));
+      const snapshot = await getDocs(allQuery);
+      const rooms = snapshot.docs
+        .map(doc => ({ roomId: doc.id, ...doc.data() }))
+        .filter(room => room.isPublic === true);
+        
+      // Client-side sort fallback
+      return rooms.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Date.now());
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Date.now());
+        return timeB - timeA;
+      });
+    }
   } catch (error) {
     console.error('Error getting public rooms:', error);
     throw error;
@@ -270,12 +287,17 @@ export const rejectJoinRequest = async (roomId, request) => {
 /**
  * Update participant role
  */
-export const updateParticipantRole = async (roomId, userId, newRole, currentDetails) => {
+export const updateParticipantRole = async (roomId, adminId, userId, newRole, currentDetails) => {
   try {
     const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) throw new Error('Room not found');
+    if (roomDoc.data().createdBy !== adminId) throw new Error('Only admins can change roles');
+
     const updatedDetails = currentDetails.map(p => 
       p.userId === userId ? { ...p, role: newRole } : p
-    ); // Filter out or update
+    );
 
     await updateDoc(roomRef, {
       participantDetails: updatedDetails
@@ -289,9 +311,16 @@ export const updateParticipantRole = async (roomId, userId, newRole, currentDeta
 /**
  * Delete a room
  */
-export const deleteRoom = async (roomId) => {
+export const deleteRoom = async (roomId, userId) => {
   try {
     const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) return; // Already deleted
+    if (roomDoc.data().createdBy !== userId) {
+      throw new Error('Permission denied: Only the creator can delete this room.');
+    }
+
     await deleteDoc(roomRef);
   } catch (error) {
     console.error('Error deleting room:', error);
