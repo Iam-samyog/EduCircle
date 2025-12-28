@@ -52,7 +52,10 @@ export const analyzeContent = async (input) => {
 
     return response.data;
   } catch (error) {
-    const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+    let errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+    if (typeof errorMsg === 'object') {
+      errorMsg = JSON.stringify(errorMsg);
+    }
     console.error('AI Analysis Error:', errorMsg);
     throw new Error(errorMsg);
   }

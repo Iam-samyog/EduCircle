@@ -59,10 +59,23 @@ export const generateSummaryAndFlashcards = async (file, manualText) => {
     const response = await result.response;
     let jsonText = response.text();
     
-    // Clean up response if it contains markdown code blocks
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+    // Improved JSON extraction: Find the first '{' and last '}'
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
     
-    return JSON.parse(jsonText);
+    if (firstBrace === -1 || lastBrace === -1) {
+      console.error('Raw AI Response:', jsonText);
+      throw new Error('AI returned invalid format (No JSON found)');
+    }
+    
+    jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+    
+    try {
+      return JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('Failed to parse AI JSON:', jsonText);
+      throw new Error('AI returned unparseable content');
+    }
   } catch (error) {
     console.error('AI Service Error:', error);
     throw error;
