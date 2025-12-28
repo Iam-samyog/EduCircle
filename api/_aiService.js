@@ -1,24 +1,22 @@
 import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import mammoth from 'mammoth';
 
+// Polyfills for Vercel/Serverless environments
+if (typeof globalThis.DOMMatrix === 'undefined') {
+  globalThis.DOMMatrix = class DOMMatrix {
+    constructor() {
+      this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
+    }
+  };
+}
+if (typeof globalThis.Image === 'undefined') globalThis.Image = class {};
+if (typeof globalThis.ImageData === 'undefined') globalThis.ImageData = class {};
+if (typeof globalThis.Path2D === 'undefined') globalThis.Path2D = class {};
+
 export const generateSummaryAndFlashcards = async (file, manualText) => {
-  const require = createRequire(import.meta.url);
-
-  // Polyfill inside the function to avoid top-level crash on Vercel initialization
-  if (typeof globalThis.DOMMatrix === 'undefined') {
-    globalThis.DOMMatrix = class DOMMatrix {
-      constructor() {
-        this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
-      }
-    };
-  }
-
-  if (typeof globalThis.Image === 'undefined') globalThis.Image = class {};
-  if (typeof globalThis.ImageData === 'undefined') globalThis.ImageData = class {};
-  if (typeof globalThis.Path2D === 'undefined') globalThis.Path2D = class {};
-
-  const pdf = require('pdf-parse');
   
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
