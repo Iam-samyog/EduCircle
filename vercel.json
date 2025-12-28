@@ -12,8 +12,12 @@
   ],
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
+      "source": "/api/health",
+      "destination": "/api/health.js"
+    },
+    {
+      "source": "/api/ai/analyze",
+      "destination": "/api/analyze.js"
     },
     {
       "source": "/((?!api/).*)",
